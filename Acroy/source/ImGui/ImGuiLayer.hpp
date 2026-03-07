@@ -15,5 +15,8 @@ namespace Acroy
 
         void Begin();
         void End();
+
+    private:
+        void SetupStyle();
     };
 }

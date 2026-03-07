@@ -83,6 +83,6 @@ namespace Acroy
     bool Application::OnWindowResize(WindowResizeEvent& event)
     {
         Renderer::SetViewport(0, 0, event.GetWidth(), event.GetHeight());
-        return true;
+        return false;
     }
 }
