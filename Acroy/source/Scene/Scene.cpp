@@ -23,17 +23,19 @@ namespace Acroy
     void Scene::OnUpdate(Timestep ts)
     {
         Ref<Camera> cam;
-        glm::mat4* camTransform = nullptr;
+        TransformComponent* camTransform = nullptr;
 
         auto camView = m_registry.view<TransformComponent, CameraComponent>();
+
         for (auto entity : camView)
         {
-            auto [transform, camera] = camView.get<TransformComponent, CameraComponent>(entity);
+            auto& transform = camView.get<TransformComponent>(entity);
+            auto& camera = camView.get<CameraComponent>(entity);
 
             if (camera.primary)
             {
                 cam = camera.camera;
-                camTransform = &transform.transform;
+                camTransform = &transform;
                 break;
             }
         }
@@ -43,23 +45,24 @@ namespace Acroy
             ACROY_CORE_INFO("No Primary Camera in Scene");
             return;
         }
-
-
-        auto view = m_registry.group<TransformComponent, MeshComponent, ShaderComponent>();
-
-        Renderer::BeginScene({ cam->GetProjection(), glm::inverse(*camTransform) });
-
+        
+        Renderer::BeginScene({ cam->GetProjection(), glm::inverse(camTransform->GetTransform()) });
+        
+        auto view = m_registry.group<TransformComponent, MeshComponent, MaterialComponent>();
         for (auto entity : view)
         {
-            auto [transform, mesh, shader] = view.get<TransformComponent, MeshComponent, ShaderComponent>(entity);
+            auto [transform, mesh, material] = view.get<TransformComponent, MeshComponent, MaterialComponent>(entity);
 
-            if (m_registry.any_of<TextureComponent>(entity)) {
-                auto& texture = m_registry.get<TextureComponent>(entity);
-                texture.texture->Bind(0);
-                shader.shader->SetUniformFloat("u_textureScale", texture.textureScale);
+            material.shader->Bind();
+
+            if (material.albedoTex)
+            {
+                material.albedoTex->Bind(0);
+                material.shader->SetUniformInt("u_texture", 0);
+                material.shader->SetUniformFloat("u_textureScale", material.scale);
             }
             
-            Renderer::Submit(mesh, shader, transform);
+            Renderer::Submit(mesh, material.shader, transform);
         }
 
         Renderer::EndScene();

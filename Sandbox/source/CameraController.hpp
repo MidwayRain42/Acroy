@@ -9,23 +9,22 @@ public:
     CameraController(Acroy::Entity cameraEntity, float moveSpeed = 3.0f, float sensitivity = 0.1f);
 
     void OnUpdate(Acroy::Timestep ts);
+    glm::mat4 GetViewMatrix();
 
     void Activate();
     void Deactivate();
     bool IsActive() const { return m_active; }
 
     void SetSpeed(float speed) { m_moveSpeed = speed; }
-    void SetSensitivity(float sensitivity) { m_mouseSensitivity = sensitivity; }
-    void SetSmoothTime(float smoothTime) { m_smoothTime = smoothTime; }
-    float GetSmoothTime() const { return m_smoothTime; }
-
-    inline glm::vec3& GetPosition() { return m_position; }
-    inline glm::vec2  GetRotation() const { return { m_pitch, m_yaw }; }
+    void SetSensitivity(float s) { m_mouseSensitivity = s; }
+    void SetSmoothTime(float t) { m_smoothTime = t; }
 
 private:
     void UpdateMouse();
-    void UpdateVectors();
-    void RebuildTransform();
+    void UpdateMovement(float dt);
+    glm::vec3 GetFront();
+    glm::vec3 GetRight();
+    glm::vec3 GetUp();
 
 private:
     Acroy::Entity m_cameraEntity;
@@ -36,18 +35,9 @@ private:
     float m_mouseSensitivity = 0.1f;
     float m_smoothTime       = 0.1f;
 
-    float m_yaw   = 270.0f;
-    float m_pitch = 0.0f;
-
     bool      m_firstMouse = true;
     glm::vec2 m_lastMousePos { 0.0f };
-
-    glm::vec3 m_position { 0.0f, 1.0f, 3.0f };
     glm::vec3 m_velocity { 0.0f };
-
-    glm::vec3 m_front;
-    glm::vec3 m_right;
-    glm::vec3 m_up;
 
     const glm::vec3 m_worldUp { 0.0f, 1.0f, 0.0f };
 };

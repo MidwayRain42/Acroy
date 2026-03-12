@@ -16,7 +16,7 @@ namespace Acroy
         ImGuiIO& io = ImGui::GetIO();
         io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
         io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
-        io.ConfigFlags |= ImGuiConfigFlags_NoMouseCursorChange;
+        // io.ConfigFlags |= ImGuiConfigFlags_NoMouseCursorChange;
 
         ImGui::StyleColorsDark();
         SetupStyle();
@@ -67,7 +67,7 @@ namespace Acroy
     void ImGuiLayer::SetupStyle()
     {
         ImGuiIO& io = ImGui::GetIO();
-        io.Fonts->AddFontFromFileTTF("/home/sam/Downloads/Inter/static/Inter_18pt-Regular.ttf");
+        io.Fonts->AddFontFromFileTTF("/home/sam/Downloads/Inter/static/Inter_18pt-Regular.ttf", 16.0f);
 
         // From https://github.com/ocornut/imgui/issues/707
         ImGuiStyle* style = &ImGui::GetStyle();

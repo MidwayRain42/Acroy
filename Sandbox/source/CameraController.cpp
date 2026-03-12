@@ -4,16 +4,43 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <cmath>
 
+static constexpr float YAW_OFFSET = 270.0f;
+
 CameraController::CameraController(Acroy::Entity cameraEntity, float moveSpeed, float sensitivity)
 : m_cameraEntity(cameraEntity)
 , m_moveSpeed(moveSpeed)
 , m_mouseSensitivity(sensitivity)
+{}
+
+// Read pitch/yaw straight from the transform
+glm::vec3 CameraController::GetFront()
+{
+    // auto& tc = m_cameraEntity.GetComponent<Acroy::TransformComponent>();
+    auto& tc = m_cameraEntity.GetComponent<Acroy::TransformComponent>();
+    float pitch = glm::degrees(tc.rotation.x);
+    float yaw   = glm::degrees(tc.rotation.y) + YAW_OFFSET;
+
+    glm::vec3 front;
+    front.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
+    front.y = sin(glm::radians(pitch));
+    front.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
+    return glm::normalize(front);
+}
+
+glm::vec3 CameraController::GetRight()
+{
+    return glm::normalize(glm::cross(GetFront(), m_worldUp));
+}
+
+glm::vec3 CameraController::GetUp()
+{
+    return glm::normalize(glm::cross(GetRight(), GetFront()));
+}
+
+glm::mat4 CameraController::GetViewMatrix()
 {
     auto& tc = m_cameraEntity.GetComponent<Acroy::TransformComponent>();
-    m_position = glm::vec3(tc.transform[3]);
-
-    UpdateVectors();
-    RebuildTransform();
+    return glm::lookAt(tc.position, tc.position + GetFront(), GetUp());
 }
 
 void CameraController::Activate()
@@ -33,33 +60,9 @@ void CameraController::Deactivate()
 void CameraController::OnUpdate(Acroy::Timestep ts)
 {
     if (!m_active) return;
-    
-    float deltaTime = ts.GetSeconds();
 
     UpdateMouse();
-
-    glm::vec3 direction(0.0f);
-
-    float speed = m_moveSpeed;
-    if (Acroy::Input::IsKeyPressed(341)) speed *= 0.3f;
-    if (Acroy::Input::IsKeyPressed(340)) speed *= 2.0f;
-
-    if (Acroy::Input::IsKeyPressed(87)) direction += m_front;
-    if (Acroy::Input::IsKeyPressed(83)) direction -= m_front;
-    if (Acroy::Input::IsKeyPressed(68)) direction += m_right;
-    if (Acroy::Input::IsKeyPressed(65)) direction -= m_right;
-    if (Acroy::Input::IsKeyPressed(69)) direction += m_up;
-    if (Acroy::Input::IsKeyPressed(81)) direction -= m_up;
-
-    glm::vec3 targetVelocity(0.0f);
-    if (glm::length(direction) > 0.0f)
-        targetVelocity = glm::normalize(direction) * speed;
-
-    m_velocity = glm::mix(m_velocity, targetVelocity, 1.0f - std::exp(-deltaTime / m_smoothTime));
-
-    m_position += m_velocity * deltaTime;
-
-    RebuildTransform();
+    UpdateMovement(ts.GetSeconds());
 }
 
 void CameraController::UpdateMouse()
@@ -76,30 +79,39 @@ void CameraController::UpdateMouse()
     glm::vec2 delta = mousePos - m_lastMousePos;
     m_lastMousePos  = mousePos;
 
-    m_yaw   += delta.x * m_mouseSensitivity;
-    m_pitch += -delta.y * m_mouseSensitivity;
-    m_pitch  = glm::clamp(m_pitch, -89.0f, 89.0f);
-
-    UpdateVectors();
-}
-
-void CameraController::UpdateVectors()
-{
-    glm::vec3 front;
-    front.x = cos(glm::radians(m_yaw)) * cos(glm::radians(m_pitch));
-    front.y = sin(glm::radians(m_pitch));
-    front.z = sin(glm::radians(m_yaw)) * cos(glm::radians(m_pitch));
-
-    m_front = glm::normalize(front);
-    m_right = glm::normalize(glm::cross(m_front, m_worldUp));
-    m_up    = glm::normalize(glm::cross(m_right, m_front));
-}
-
-void CameraController::RebuildTransform()
-{
-    glm::mat4 rotation    = glm::inverse(glm::lookAt(glm::vec3(0.0f), m_front, m_up));
-    glm::mat4 translation = glm::translate(glm::mat4(1.0f), m_position);
-
     auto& tc = m_cameraEntity.GetComponent<Acroy::TransformComponent>();
-    tc.transform = translation * rotation;
+
+    tc.rotation.y -= glm::radians(delta.x * m_mouseSensitivity);
+    tc.rotation.x -= glm::radians(delta.y * m_mouseSensitivity);
+    tc.rotation.x  = glm::clamp(tc.rotation.x, glm::radians(-89.0f), glm::radians(89.0f));
+}
+
+void CameraController::UpdateMovement(float dt)
+{
+    auto& tc = m_cameraEntity.GetComponent<Acroy::TransformComponent>();
+
+    glm::vec3 front = GetFront();
+    glm::vec3 right = GetRight();
+    glm::vec3 up    = GetUp();
+
+    glm::vec3 direction(0.0f);
+
+    float speed = m_moveSpeed;
+    if (Acroy::Input::IsKeyPressed(341)) speed *= 0.3f;
+    if (Acroy::Input::IsKeyPressed(340)) speed *= 2.0f;
+
+    if (Acroy::Input::IsKeyPressed(87)) direction += front;
+    if (Acroy::Input::IsKeyPressed(83)) direction -= front;
+    if (Acroy::Input::IsKeyPressed(68)) direction += right;
+    if (Acroy::Input::IsKeyPressed(65)) direction -= right;
+    if (Acroy::Input::IsKeyPressed(69)) direction += up;
+    if (Acroy::Input::IsKeyPressed(81)) direction -= up;
+
+    glm::vec3 targetVelocity(0.0f);
+    if (glm::length(direction) > 0.0f)
+        targetVelocity = glm::normalize(direction) * speed;
+
+    m_velocity = glm::mix(m_velocity, targetVelocity, 1.0f - std::exp(-dt / m_smoothTime));
+
+    tc.position += m_velocity * dt;
 }

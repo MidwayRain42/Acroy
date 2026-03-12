@@ -3,7 +3,12 @@
 #include <Core/Layer.hpp>
 #include <Renderer/Camera.hpp>
 #include <Core/Core.hpp>
+#include <Scene/Entity.hpp>
 #include "CameraController.hpp"
+
+#include <string>
+#include <vector>
+#include <utility>
 
 class SandboxLayer : public Acroy::Layer
 {
@@ -15,5 +20,9 @@ public:
 
 private:
     Acroy::Ref<Acroy::Scene> m_scene;
-    Acroy::Scope<CameraController> m_cameraController;
+
+    // Named entity handles used by the Scene Inspector panel.
+    // vector<pair> avoids the default-constructor requirement that
+    // unordered_map::operator[] imposes on its value type.
+    std::vector<std::pair<std::string, Acroy::Entity>> m_entities;
 };

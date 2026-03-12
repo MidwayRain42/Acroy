@@ -34,7 +34,7 @@ namespace Acroy
 
     IndexBuffer::IndexBuffer(uint32_t* indices, uint32_t count) : m_indicesCount(count)
     {
-        glCreateBuffers(1, &m_rendererID);
+        glGenBuffers(1, &m_rendererID);
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_rendererID);
         glBufferData(GL_ELEMENT_ARRAY_BUFFER, count * sizeof(uint32_t), indices, GL_STATIC_DRAW);
     }

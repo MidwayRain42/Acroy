@@ -18,13 +18,28 @@ namespace Acroy
 
     struct TransformComponent
     {
-        glm::mat4 transform {1.0f};
-        float somedata = 5;
+        glm::vec3 position {0.0f, 0.0f, 0.0f};
+        glm::vec3 rotation {0.0f, 0.0f, 0.0f};
+        glm::vec3 scale {1.0f, 1.0f, 1.0f};
 
         TransformComponent() = default;
-        TransformComponent(const glm::mat4& transform) : transform(transform) {}
 
-        operator const glm::mat4&() const { return transform; }
+        TransformComponent(const glm::vec3& pos)
+            : position(pos) {}
+
+        glm::mat4 GetTransform() const
+        {
+            glm::mat4 rot =
+                glm::rotate(glm::mat4(1.0f), rotation.x, {1,0,0}) *
+                glm::rotate(glm::mat4(1.0f), rotation.y, {0,1,0}) *
+                glm::rotate(glm::mat4(1.0f), rotation.z, {0,0,1});
+
+            return glm::translate(glm::mat4(1.0f), position)
+                * rot
+                * glm::scale(glm::mat4(1.0f), scale);
+        }
+
+        operator glm::mat4() const { return GetTransform(); }
     };
 
     struct MeshComponent
@@ -37,23 +52,17 @@ namespace Acroy
         operator const Ref<Mesh>&() const { return mesh; }
     };
 
-    struct ShaderComponent
+    struct MaterialComponent
     {
         Ref<Shader> shader;
+        
+        glm::vec4 albedo;
+        Ref<Texture> albedoTex;
 
-        ShaderComponent() = default;
-        ShaderComponent(const Ref<Shader> shader) : shader(shader) {}
+        float scale = 1.0f;
 
-        operator const Ref<Shader>&() const { return shader; }
-    };
-
-    struct TextureComponent
-    {
-        Ref<Texture> texture;
-        float textureScale {1.0f};
-
-        TextureComponent() = default;
-        TextureComponent(const Ref<Texture> tex) : texture(tex) {}
+        MaterialComponent(const Ref<Shader>& shader) : shader(shader) {}
+        MaterialComponent() = default;
     };
 
     struct CameraComponent

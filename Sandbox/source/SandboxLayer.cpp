@@ -87,115 +87,170 @@ void SandboxLayer::OnAttach()
     // -------------- Shader ------------------
     // ----------------------------------------
 
-    std::string vertexSrc = R"(
-        #version 460 core
-        layout(location = 0) in vec3 a_position;
-        layout(location = 1) in vec3 a_normal;
-        layout(location = 2) in vec2 a_texCoord;
+    Acroy::Ref<Acroy::Shader> shader = Acroy::CreateRef<Acroy::Shader>("/home/sam/Documents/dev/Acroy/Sandbox/assets/shaders/SimpleShader.glsl");
+    
+    Acroy::MaterialComponent groundMat(shader);
+    groundMat.albedoTex = groundTexture;
+    groundMat.scale = 15.0f;
 
-        uniform mat4 u_model;
-        uniform mat4 u_view;
-        uniform mat4 u_proj;
-        out vec2 v_texCoord;
-
-        void main()
-        {
-            gl_Position = u_proj * u_view * u_model * vec4(a_position, 1.0);
-            v_texCoord = a_texCoord;
-        }
-    )";
-
-    std::string fragSrc = R"(
-        #version 460 core
-
-        out vec4 FragColor;
-        in vec2 v_texCoord;
-
-        uniform sampler2D u_texture;
-        uniform float u_textureScale;
-
-        void main()
-        {
-            FragColor = texture(u_texture, v_texCoord * u_textureScale);
-        }
-    )";
-
-    Acroy::Ref<Acroy::Shader> shader = Acroy::CreateRef<Acroy::Shader>(vertexSrc, fragSrc);
+    Acroy::MaterialComponent cubeMat(shader);
+    cubeMat.albedoTex = cubeTexture;
+    cubeMat.scale = 2.0f;
 
 
     // ----------------------------------------
     // -------------- Setup Scene -------------
     // ----------------------------------------
 
-
     auto cam = Acroy::CreateRef<Acroy::PerspectiveCamera>(90.f, 16.0f/9.0f, 0.1f, 100.0f);
-
 
     m_scene = Acroy::CreateRef<Acroy::Scene>(cam);
 
     Acroy::Entity cameraEntity = m_scene->Create("Camera");
     cameraEntity.AddComponent<Acroy::CameraComponent>(cam);
     Acroy::TransformComponent& camTransform = cameraEntity.GetComponent<Acroy::TransformComponent>();
-    camTransform.transform = glm::translate(camTransform.transform, glm::vec3(0.0, 1.0, 0.0));
-
-    m_cameraController = Acroy::CreateScope<CameraController>(cameraEntity);
-
-    // camTransform.transform = glm::translate(camTransform.transform, glm::vec3(0.0, 1.0, 5.0));
+    camTransform.position = glm::vec3(0.0, 1.0, 0.0);
 
     Acroy::Entity groundEntity = m_scene->Create("Ground");
     groundEntity.AddComponent<Acroy::MeshComponent>(groundMesh);
-    groundEntity.AddComponent<Acroy::ShaderComponent>(shader);
-
-    Acroy::TextureComponent& groundTextureComponent = groundEntity.AddComponent<Acroy::TextureComponent>(groundTexture);
-    groundTextureComponent.textureScale = 15.0f;
+    groundEntity.AddComponent<Acroy::MaterialComponent>(groundMat);
 
     Acroy::Entity cubeEntity = m_scene->Create("Cube");
     cubeEntity.AddComponent<Acroy::MeshComponent>(cubeMesh);
-    cubeEntity.AddComponent<Acroy::ShaderComponent>(shader);
-    Acroy::TextureComponent& cubeTextureComponent = cubeEntity.AddComponent<Acroy::TextureComponent>(cubeTexture);
-    cubeTextureComponent.textureScale = 2.0f;
+    cubeEntity.AddComponent<Acroy::MaterialComponent>(cubeMat);
 
-    glm::mat4& cubeTransform = cubeEntity.GetComponent<Acroy::TransformComponent>().transform;
+    Acroy::TransformComponent& cubeTransform = cubeEntity.GetComponent<Acroy::TransformComponent>();
+    cubeTransform.position = glm::vec3(0.0, 1.0, 0.0);
+    cubeTransform.scale = glm::vec3(2.0f);
 
-    cubeTransform = glm::translate(cubeTransform, glm::vec3(0.0, 1.0, 0.0));
-    cubeTransform = glm::scale(cubeTransform, glm::vec3(2.0f));
+    // Store named entity handles for the inspector panel
+    m_entities.emplace_back("Camera", cameraEntity);
+    m_entities.emplace_back("Ground", groundEntity);
+    m_entities.emplace_back("Cube",   cubeEntity);
 }
 
 void SandboxLayer::OnUpdate(Acroy::Timestep timestep)
 {
-    Acroy::Renderer::SetClearColor({0.73f,0.81f,0.92f,1.0f});
+    // Acroy::Renderer::SetClearColor({0.73f,0.81f,0.92f,1.0f});
+    Acroy::Renderer::SetClearColor({72.f/255.f, 72.f/255.f, 72.f/255.f, 1.f});
     Acroy::Renderer::Clear();
 
     m_scene->OnUpdate(timestep);
-    m_cameraController->OnUpdate(timestep);
+}
+
+// Helper to draw a labeled DragFloat3 row inside the transform panel.
+static void DrawVec3Control(const char* label, glm::vec3& values, float resetValue = 0.0f, float speed = 0.1f)
+{
+    ImGui::PushID(label);
+
+    ImGui::TableNextRow();
+    ImGui::TableSetColumnIndex(0);
+    ImGui::TextUnformatted(label);
+
+    ImGui::TableSetColumnIndex(1);
+    ImGui::SetNextItemWidth(-1);
+    ImGui::DragFloat3("##v", &values.x, speed);
+
+    ImGui::SameLine();
+    if (ImGui::SmallButton("R"))
+        values = glm::vec3(resetValue);
+
+    ImGui::PopID();
+}
+
+// Rotation variant: displays and edits in degrees, but tc.rotation is stored
+// in radians (as glm::rotate expects). Converts on the way in and out.
+static void DrawRotationControl(const char* label, glm::vec3& radiansValue)
+{
+    ImGui::PushID(label);
+
+    ImGui::TableNextRow();
+    ImGui::TableSetColumnIndex(0);
+    ImGui::TextUnformatted(label);
+
+    ImGui::TableSetColumnIndex(1);
+    ImGui::SetNextItemWidth(-1);
+
+    glm::vec3 degrees = glm::degrees(radiansValue);
+    // if (ImGui::DragFloat3("##v", &degrees.x, 1.0f, "%.1f"))
+    if (ImGui::DragFloat3("##v", &degrees.x))
+        radiansValue = glm::radians(degrees);
+
+    ImGui::SameLine();
+    if (ImGui::SmallButton("R"))
+        radiansValue = glm::vec3(0.0f);
+
+    ImGui::PopID();
 }
 
 void SandboxLayer::OnImGuiRender()
 {
-    ImGui::ShowDemoWindow();
+    ImGuiIO& io = ImGui::GetIO();
+
+    // ----------------------------------------
+    // ----------- Render Stats ---------------
+    // ----------------------------------------
+
+    ImGui::Begin("Render Stats");
+
+    float fps = io.Framerate;
+    float frametime = 1000.0f / (fps > 0.0f ? fps : 1.0f);
+
+    ImGui::Text("Framerate: ");
+    ImGui::SameLine();
+    ImGui::Text("%.1f", fps);
+
+    ImGui::Text("Frametime: ");
+    ImGui::SameLine();
+    ImGui::Text("%.2f ms", frametime);
+
+    ImGui::End();
+
+    // ----------------------------------------
+    // --------- Scene Inspector --------------
+    // ----------------------------------------
+
+    ImGui::Begin("Scene Inspector");
+
+    for (auto& [name, entity] : m_entities)  // pair<string, Entity>
+    {
+        // Collapsible header per entity
+        bool open = ImGui::CollapsingHeader(name.c_str(), ImGuiTreeNodeFlags_DefaultOpen);
+        if (!open)
+            continue;
+
+        if (!entity.HasComponent<Acroy::TransformComponent>())
+        {
+            ImGui::TextDisabled("  (no TransformComponent)");
+            continue;
+        }
+
+        Acroy::TransformComponent& tc = entity.GetComponent<Acroy::TransformComponent>();
+
+        // Two-column table: label | control
+        if (ImGui::BeginTable("##transform", 2, ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags_BordersInnerV))
+        {
+            ImGui::TableSetupColumn("Property", ImGuiTableColumnFlags_WidthFixed, 70.0f);
+            ImGui::TableSetupColumn("Value",    ImGuiTableColumnFlags_WidthStretch);
+
+            DrawVec3Control("Position", tc.position, 0.0f, 0.05f);
+            DrawRotationControl("Rotation", tc.rotation);
+            DrawVec3Control("Scale",    tc.scale,    1.0f, 0.05f);
+
+            ImGui::EndTable();
+        }
+
+        ImGui::Spacing();
+    }
+
+    ImGui::End();
 }
 
 void SandboxLayer::OnEvent(Acroy::Event& event)
 {
-    ACROY_TRACE("{0}", event.ToString());
-
     if (event.GetEventType() == Acroy::EventType::WindowResize)
     {
         auto e = dynamic_cast<Acroy::WindowResizeEvent*>(&event);
         m_scene->OnWindowResize(e->GetWidth(), e->GetHeight());
-    }
-
-    if (event.GetEventType() == Acroy::EventType::MouseButtonPressed)
-    {
-        auto e = dynamic_cast<Acroy::MouseButtonPressedEvent*>(&event);
-        if (e->GetButton() == 1)
-            m_cameraController->Activate();
-    }
-
-    if (event.GetEventType() == Acroy::EventType::MouseButtonReleased)
-    {
-        auto e = dynamic_cast<Acroy::MouseButtonReleasedEvent*>(&event);
-        if (e->GetButton() == 1)
-            m_cameraController->Deactivate();
     }
 }
