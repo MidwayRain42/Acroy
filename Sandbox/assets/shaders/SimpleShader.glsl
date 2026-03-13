@@ -26,8 +26,13 @@ in vec2 v_texCoord;
 
 uniform sampler2D u_texture;
 uniform float u_textureScale;
+uniform vec4 u_color;
+uniform bool u_useTexture;
 
 void main()
 {
-    FragColor = texture(u_texture, v_texCoord * u_textureScale);
+    if (u_useTexture)
+        FragColor = texture(u_texture, v_texCoord * u_textureScale);
+    else
+        FragColor = u_color;
 }

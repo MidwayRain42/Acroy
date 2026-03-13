@@ -22,6 +22,7 @@ namespace Acroy
 
     void Scene::OnUpdate(Timestep ts)
     {
+        // Get Primary Camera
         Ref<Camera> cam;
         TransformComponent* camTransform = nullptr;
 
@@ -46,26 +47,50 @@ namespace Acroy
             return;
         }
         
+        // Rendering
         Renderer::BeginScene({ cam->GetProjection(), glm::inverse(camTransform->GetTransform()) });
         
-        auto view = m_registry.group<TransformComponent, MeshComponent, MaterialComponent>();
-        for (auto entity : view)
+        auto renderView = m_registry.group<TransformComponent, MeshComponent, MaterialComponent>();
+        for (auto entity : renderView)
         {
-            auto [transform, mesh, material] = view.get<TransformComponent, MeshComponent, MaterialComponent>(entity);
+            auto [transform, mesh, material] = renderView.get<TransformComponent, MeshComponent, MaterialComponent>(entity);
 
             material.shader->Bind();
-
+            
             if (material.albedoTex)
             {
                 material.albedoTex->Bind(0);
+                material.shader->SetUniformInt("u_useTexture", 1);
                 material.shader->SetUniformInt("u_texture", 0);
                 material.shader->SetUniformFloat("u_textureScale", material.scale);
+            }
+            else
+            {
+                material.shader->SetUniformInt("u_useTexture", 0);
+                material.shader->SetUniformFloat4("u_color", material.albedo);
             }
             
             Renderer::Submit(mesh, material.shader, transform);
         }
 
         Renderer::EndScene();
+
+        // Update Scripts
+        auto scriptView = m_registry.view<NativeScriptComponent>();
+        for (auto entity : scriptView)
+        {
+            auto& ncs = scriptView.get<NativeScriptComponent>(entity);
+
+            if (!ncs.instance)
+            {
+                ncs.instance = ncs.InstaniateScript();
+                ncs.instance->m_entity = Entity(entity, this);
+                ncs.instance->OnStart();
+            }
+
+            ncs.instance->OnUpdate(ts);
+        }
+
     }
 
     void Scene::OnWindowResize(float width, float height)

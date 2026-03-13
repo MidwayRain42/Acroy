@@ -9,6 +9,7 @@
 #include <string>
 #include <vector>
 #include <utility>
+#include <optional>
 
 class SandboxLayer : public Acroy::Layer
 {
@@ -19,10 +20,10 @@ public:
     void OnImGuiRender() override;
 
 private:
-    Acroy::Ref<Acroy::Scene> m_scene;
+    void DrawComponentsPanel();
 
-    // Named entity handles used by the Scene Inspector panel.
-    // vector<pair> avoids the default-constructor requirement that
-    // unordered_map::operator[] imposes on its value type.
+    Acroy::Ref<Acroy::Scene> m_scene;
     std::vector<std::pair<std::string, Acroy::Entity>> m_entities;
+
+    int m_selectedEntity = -1;
 };

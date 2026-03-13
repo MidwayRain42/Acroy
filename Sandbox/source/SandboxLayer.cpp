@@ -7,7 +7,11 @@
 #include <Scene/Entity.hpp>
 #include <Scene/Components.hpp>
 #include <Renderer/PerspectiveCamera.hpp>
+#include <Scene/ScriptableEntity.hpp>
 #include <imgui.h>
+
+#include "CameraController.hpp"
+
 
 void SandboxLayer::OnAttach()
 {
@@ -94,7 +98,7 @@ void SandboxLayer::OnAttach()
     groundMat.scale = 15.0f;
 
     Acroy::MaterialComponent cubeMat(shader);
-    cubeMat.albedoTex = cubeTexture;
+    // cubeMat.albedoTex = cubeTexture;
     cubeMat.scale = 2.0f;
 
 
@@ -102,12 +106,12 @@ void SandboxLayer::OnAttach()
     // -------------- Setup Scene -------------
     // ----------------------------------------
 
-    auto cam = Acroy::CreateRef<Acroy::PerspectiveCamera>(90.f, 16.0f/9.0f, 0.1f, 100.0f);
+    auto camera = Acroy::CreateRef<Acroy::PerspectiveCamera>(90.f, 16.0f/9.0f, 0.1f, 100.0f);
 
-    m_scene = Acroy::CreateRef<Acroy::Scene>(cam);
+    m_scene = Acroy::CreateRef<Acroy::Scene>(camera);
 
     Acroy::Entity cameraEntity = m_scene->Create("Camera");
-    cameraEntity.AddComponent<Acroy::CameraComponent>(cam);
+    cameraEntity.AddComponent<Acroy::CameraComponent>(camera);
     Acroy::TransformComponent& camTransform = cameraEntity.GetComponent<Acroy::TransformComponent>();
     camTransform.position = glm::vec3(0.0, 1.0, 0.0);
 
@@ -123,6 +127,8 @@ void SandboxLayer::OnAttach()
     cubeTransform.position = glm::vec3(0.0, 1.0, 0.0);
     cubeTransform.scale = glm::vec3(2.0f);
 
+    cameraEntity.AddComponent<Acroy::NativeScriptComponent>().Bind<CameraController>();
+
     // Store named entity handles for the inspector panel
     m_entities.emplace_back("Camera", cameraEntity);
     m_entities.emplace_back("Ground", groundEntity);
@@ -131,7 +137,6 @@ void SandboxLayer::OnAttach()
 
 void SandboxLayer::OnUpdate(Acroy::Timestep timestep)
 {
-    // Acroy::Renderer::SetClearColor({0.73f,0.81f,0.92f,1.0f});
     Acroy::Renderer::SetClearColor({72.f/255.f, 72.f/255.f, 72.f/255.f, 1.f});
     Acroy::Renderer::Clear();
 
@@ -172,7 +177,6 @@ static void DrawRotationControl(const char* label, glm::vec3& radiansValue)
     ImGui::SetNextItemWidth(-1);
 
     glm::vec3 degrees = glm::degrees(radiansValue);
-    // if (ImGui::DragFloat3("##v", &degrees.x, 1.0f, "%.1f"))
     if (ImGui::DragFloat3("##v", &degrees.x))
         radiansValue = glm::radians(degrees);
 
@@ -181,6 +185,154 @@ static void DrawRotationControl(const char* label, glm::vec3& radiansValue)
         radiansValue = glm::vec3(0.0f);
 
     ImGui::PopID();
+}
+
+// Draw a styled component section header (colored bar + label).
+static bool DrawComponentHeader(const char* label, ImVec4 color)
+{
+    ImGui::PushStyleColor(ImGuiCol_Header,        ImVec4(color.x, color.y, color.z, 0.35f));
+    ImGui::PushStyleColor(ImGuiCol_HeaderHovered, ImVec4(color.x, color.y, color.z, 0.50f));
+    ImGui::PushStyleColor(ImGuiCol_HeaderActive,  ImVec4(color.x, color.y, color.z, 0.70f));
+    bool open = ImGui::CollapsingHeader(label, ImGuiTreeNodeFlags_DefaultOpen);
+    ImGui::PopStyleColor(3);
+    return open;
+}
+
+void SandboxLayer::DrawComponentsPanel()
+{
+    ImGui::Begin("Components");
+
+    if (m_selectedEntity < 0 || m_selectedEntity >= (int)m_entities.size())
+    {
+        ImGui::TextDisabled("Select an entity in the Scene Inspector.");
+        ImGui::End();
+        return;
+    }
+
+    auto& [name, entity] = m_entities[m_selectedEntity];
+
+    // Entity title
+    ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.85f, 0.4f, 1.0f));
+    ImGui::Text("%s", name.c_str());
+    ImGui::PopStyleColor();
+    ImGui::Separator();
+    ImGui::Spacing();
+
+    // ---- TagComponent ----
+    if (entity.HasComponent<Acroy::TagComponent>())
+    {
+        if (DrawComponentHeader("Tag", {0.5f, 0.8f, 1.0f, 1.0f}))
+        {
+            auto& tc = entity.GetComponent<Acroy::TagComponent>();
+            char buf[256];
+            strncpy(buf, tc.tag.c_str(), sizeof(buf));
+            buf[sizeof(buf) - 1] = '\0';
+            ImGui::SetNextItemWidth(-1);
+            if (ImGui::InputText("##tag", buf, sizeof(buf)))
+                tc.tag = buf;
+            ImGui::Spacing();
+        }
+    }
+
+    // ---- TransformComponent ----
+    if (entity.HasComponent<Acroy::TransformComponent>())
+    {
+        if (DrawComponentHeader("Transform", {0.4f, 1.0f, 0.6f, 1.0f}))
+        {
+            auto& tc = entity.GetComponent<Acroy::TransformComponent>();
+            if (ImGui::BeginTable("##tc", 2, ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags_BordersInnerV))
+            {
+                ImGui::TableSetupColumn("Property", ImGuiTableColumnFlags_WidthFixed, 70.0f);
+                ImGui::TableSetupColumn("Value",    ImGuiTableColumnFlags_WidthStretch);
+
+                DrawVec3Control("Position", tc.position, 0.0f, 0.05f);
+                DrawRotationControl("Rotation", tc.rotation);
+                DrawVec3Control("Scale",    tc.scale,    1.0f, 0.05f);
+
+                ImGui::EndTable();
+            }
+            ImGui::Spacing();
+        }
+    }
+
+    // ---- MeshComponent ----
+    if (entity.HasComponent<Acroy::MeshComponent>())
+    {
+        if (DrawComponentHeader("Mesh", {1.0f, 0.6f, 0.3f, 1.0f}))
+        {
+            auto& mc = entity.GetComponent<Acroy::MeshComponent>();
+            ImGui::TextDisabled("Mesh ptr: %p", (void*)mc.mesh.get());
+            ImGui::Spacing();
+        }
+    }
+
+    // ---- MaterialComponent ----
+    if (entity.HasComponent<Acroy::MaterialComponent>())
+    {
+        if (DrawComponentHeader("Material", {0.9f, 0.4f, 0.9f, 1.0f}))
+        {
+            auto& mat = entity.GetComponent<Acroy::MaterialComponent>();
+
+            ImGui::TextDisabled("Shader: %p", (void*)mat.shader.get());
+
+            ImGui::SetNextItemWidth(120.0f);
+            ImGui::DragFloat("UV Scale", &mat.scale, 0.05f, 0.01f, 100.0f, "%.2f");
+
+            ImGui::ColorEdit4("Albedo Color", &mat.albedo.x);
+
+            if (mat.albedoTex)
+                ImGui::TextDisabled("Albedo Tex: %p", (void*)mat.albedoTex.get());
+            else
+                ImGui::TextDisabled("Albedo Tex: (none)");
+
+            ImGui::Spacing();
+        }
+    }
+
+// ---- CameraComponent ----
+if (entity.HasComponent<Acroy::CameraComponent>())
+{
+    if (DrawComponentHeader("Camera", {0.4f, 0.7f, 1.0f, 1.0f}))
+    {
+        auto& cc = entity.GetComponent<Acroy::CameraComponent>();
+        ImGui::Checkbox("Primary", &cc.primary);
+
+        // Cast to PerspectiveCamera to expose FOV / near / far controls
+        auto* persp = dynamic_cast<Acroy::PerspectiveCamera*>(cc.camera.get());
+        if (persp)
+        {
+            float fov = persp->GetFOV();
+            if (ImGui::DragFloat("FOV", &fov, 0.5f, 10.0f, 170.0f, "%.1f deg"))
+                persp->SetFOV(fov);
+
+            // Aspect is read-only (driven by window resize)
+            float aspect = persp->GetAspect();
+            ImGui::BeginDisabled();
+            ImGui::DragFloat("Aspect", &aspect, 0.0f, 0.0f, 0.0f, "%.3f");
+            ImGui::EndDisabled();
+        }
+        else
+        {
+            ImGui::TextDisabled("(orthographic / unknown camera type)");
+        }
+
+        ImGui::Spacing();
+    }
+}
+
+    // ---- NativeScriptComponent ----
+    if (entity.HasComponent<Acroy::NativeScriptComponent>())
+    {
+        if (DrawComponentHeader("Native Script", {1.0f, 0.75f, 0.3f, 1.0f}))
+        {
+            auto& nsc = entity.GetComponent<Acroy::NativeScriptComponent>();
+            ImGui::TextDisabled("Instance: %p", (void*)nsc.instance);
+            ImGui::TextDisabled("Instantiate fn: %p", (void*)nsc.InstaniateScript);
+            ImGui::Spacing();
+        }
+    }
+
+    ImGui::End();
 }
 
 void SandboxLayer::OnImGuiRender()
@@ -212,38 +364,51 @@ void SandboxLayer::OnImGuiRender()
 
     ImGui::Begin("Scene Inspector");
 
-    for (auto& [name, entity] : m_entities)  // pair<string, Entity>
+    for (int i = 0; i < (int)m_entities.size(); ++i)
     {
-        // Collapsible header per entity
-        bool open = ImGui::CollapsingHeader(name.c_str(), ImGuiTreeNodeFlags_DefaultOpen);
-        if (!open)
-            continue;
+        auto& [name, entity] = m_entities[i];
 
-        if (!entity.HasComponent<Acroy::TransformComponent>())
+        // Highlight selected entity
+        bool selected = (m_selectedEntity == i);
+        if (selected)
         {
-            ImGui::TextDisabled("  (no TransformComponent)");
-            continue;
+            ImGui::PushStyleColor(ImGuiCol_Header,        ImVec4(0.26f, 0.59f, 0.98f, 0.40f));
+            ImGui::PushStyleColor(ImGuiCol_HeaderHovered, ImVec4(0.26f, 0.59f, 0.98f, 0.55f));
         }
 
-        Acroy::TransformComponent& tc = entity.GetComponent<Acroy::TransformComponent>();
+        ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanAvailWidth;
+        if (selected) flags |= ImGuiTreeNodeFlags_Selected;
 
-        // Two-column table: label | control
-        if (ImGui::BeginTable("##transform", 2, ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags_BordersInnerV))
+        bool open = ImGui::TreeNodeEx((void*)(intptr_t)i, flags, "%s", name.c_str());
+
+        if (selected) ImGui::PopStyleColor(2);
+
+        // Clicking the node selects the entity
+        if (ImGui::IsItemClicked())
+            m_selectedEntity = i;
+
+        if (open)
         {
-            ImGui::TableSetupColumn("Property", ImGuiTableColumnFlags_WidthFixed, 70.0f);
-            ImGui::TableSetupColumn("Value",    ImGuiTableColumnFlags_WidthStretch);
+            // Show a compact tag list of attached components
+            if (entity.HasComponent<Acroy::TransformComponent>())  ImGui::BulletText("Transform");
+            if (entity.HasComponent<Acroy::MeshComponent>())       ImGui::BulletText("Mesh");
+            if (entity.HasComponent<Acroy::MaterialComponent>())   ImGui::BulletText("Material");
+            if (entity.HasComponent<Acroy::CameraComponent>())     ImGui::BulletText("Camera");
+            if (entity.HasComponent<Acroy::NativeScriptComponent>()) ImGui::BulletText("NativeScript");
 
-            DrawVec3Control("Position", tc.position, 0.0f, 0.05f);
-            DrawRotationControl("Rotation", tc.rotation);
-            DrawVec3Control("Scale",    tc.scale,    1.0f, 0.05f);
-
-            ImGui::EndTable();
+            ImGui::TreePop();
         }
 
         ImGui::Spacing();
     }
 
     ImGui::End();
+
+    // ----------------------------------------
+    // --------- Components Panel -------------
+    // ----------------------------------------
+
+    DrawComponentsPanel();
 }
 
 void SandboxLayer::OnEvent(Acroy::Event& event)
