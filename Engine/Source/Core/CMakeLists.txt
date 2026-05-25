@@ -18,7 +18,7 @@ target_include_directories(AcroyCore
 
 target_link_libraries(AcroyCore
     PUBLIC
-        AcroyRenderer
+        AcroyRenderer AcroyResources
     
     PRIVATE
         glfw

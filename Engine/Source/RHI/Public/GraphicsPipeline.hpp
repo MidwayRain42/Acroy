@@ -26,8 +26,7 @@ namespace Acroy
         Shader* vertexShader = nullptr;
         Shader* fragmentShader = nullptr;
 
-        u32 numVertexAttributes = 0;
-        VertexAttribute* vertexAttributes = nullptr;
+        std::vector<VertexAttribute> vertexAttributes;
 
         PrimitiveType primitiveType = PrimitiveType::TriangleList;
     };
@@ -50,7 +49,6 @@ namespace Acroy
 
     private:
         GraphicsPipelineDesc _desc;
-        std::vector<VertexAttribute> _vertexAttributes;
         u32 _handle;
         u32 _vao;
     };

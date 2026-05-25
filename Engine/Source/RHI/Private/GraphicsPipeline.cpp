@@ -19,10 +19,11 @@ namespace Acroy
 
     GraphicsPipeline::GraphicsPipeline(const GraphicsPipelineDesc& desc) : _desc(desc)
     {
-        if (desc.vertexAttributes && desc.numVertexAttributes > 0)
+        std::cout << "Creating new Graphics Pipeline" << std::endl;
+
+        if (desc.vertexAttributes.size() > 0)
         {
-            _vertexAttributes.assign(desc.vertexAttributes, desc.vertexAttributes + desc.numVertexAttributes);
-            _desc.vertexAttributes = _vertexAttributes.data();
+            _desc = desc;
         }
 
         _handle = glCreateProgram();
@@ -55,7 +56,7 @@ namespace Acroy
 
     void GraphicsPipeline::SetupVertexAttributes(const GraphicsPipelineDesc& desc)
     {
-        for (int i{0}; i < desc.numVertexAttributes; ++i)
+        for (int i{0}; i < desc.vertexAttributes.size(); ++i)
         {
             const VertexAttribute& attrib = desc.vertexAttributes[i];
 

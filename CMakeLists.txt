@@ -7,6 +7,7 @@ set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 add_subdirectory(Dependencies/glfw)
 add_subdirectory(Dependencies/glad)
+add_subdirectory(Dependencies/stb)
 
 add_subdirectory(Engine)
 add_subdirectory(Sandbox)

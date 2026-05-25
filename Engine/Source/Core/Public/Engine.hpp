@@ -4,9 +4,9 @@
 
 namespace Acroy
 {
-    class FrameBuffer;
-    class GraphicsPipeline;
-    class Buffer;
+    class Renderer;
+    class Mesh;
+    class SimpleMaterial;
 
     class Engine
     {
@@ -18,9 +18,10 @@ namespace Acroy
 
     private:
         Window* _window;
-        FrameBuffer* _frameBuffer;
-        GraphicsPipeline* _pipeline;
-        Buffer* _vertexBuffer;
-        Buffer* _indexBuffer;
+
+        Mesh* _mesh;
+        SimpleMaterial* _mat;
+
+        Renderer* _renderer;
     };
 }

@@ -3,8 +3,9 @@ add_library(Acroy STATIC)
 add_subdirectory(Source/Renderer)
 add_subdirectory(Source/Core)
 add_subdirectory(Source/RHI)
+add_subdirectory(Source/Resources)
 
-target_link_libraries(Acroy PUBLIC AcroyCore AcroyRHI)
+target_link_libraries(Acroy PUBLIC AcroyCore AcroyRHI AcroyRenderer AcroyResources)
 
 
 find_program(GLSLANG glslangValidator REQUIRED)

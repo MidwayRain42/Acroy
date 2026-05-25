@@ -5,7 +5,22 @@ layout(location = 1) in vec2 vTexCoord;
 
 layout(location = 0) out vec4 fragColor;
 
+layout(set = 0, binding = 0) uniform sampler2D texSampler;
+
+layout(std140, binding = 0) uniform Params
+{
+    vec4 color;
+    bool useTexture;
+};
+
 void main()
 {
-    fragColor = vec4(vColor, 1.0);
+    if (useTexture)
+    {
+        fragColor = texture(texSampler, vTexCoord);
+    }
+    else
+    {
+        fragColor = color;
+    }
 }
