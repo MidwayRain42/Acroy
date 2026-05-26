@@ -5,6 +5,7 @@
 #include "Renderer.hpp"
 #include "Mesh.hpp"
 #include "SimpleMaterial.hpp"
+#include "Texture.hpp"
 
 // Res
 #include "MeshFactory.hpp"
@@ -18,25 +19,28 @@ namespace Acroy
 {
     Engine::Engine()
     {
-        _window = new Window({
-            .width = 1600,
-            .height = 900,
-            .fullscreen = false,
-            .title = "Acroy Engine"
+        _window = std::make_unique<Window>(WindowProps {
+            .width      = 1920,
+            .height     = 1080,
+            .fullscreen = true,
+            .title      = "Acroy Engine"
         });
 
-        _renderer = new Renderer({
-            .window = _window,
+        _renderer = std::make_unique<Renderer>(RendererDesc {
+            .window      = _window.get(),
             .enableVSync = true
         });
 
-        _mesh = MeshFactory::CreateQuad();
+        _mesh = std::shared_ptr<Mesh>(
+            MeshFactory::CreateQuad()
+        );
 
-        _mat = new SimpleMaterial();
+        _mat = std::make_shared<SimpleMaterial>();
 
         _mat->SetTexture(
-            TextureLoader::FromFile("/home/sam/Pictures/Wallpapers/ayam7gtjz0r91.jpg")
+            std::shared_ptr<Texture>(TextureLoader::FromFile("/home/sam/Pictures/gruvbox/beach.jpg"))
         );
+
     }
 
     void Engine::Run()
@@ -44,7 +48,7 @@ namespace Acroy
         while (!_window->ShouldClose())
         {
             _renderer->BeginFrame();
-            _renderer->DrawMesh(_mesh, _mat);
+            _renderer->DrawMesh(_mesh.get(), _mat.get());
             _renderer->EndFrame();
             
             _window->Update();
@@ -54,18 +58,5 @@ namespace Acroy
     Engine::~Engine()
     {
         std::cout << "Shutting down engine..." << std::endl;
-
-        /*
-
-        This is temporary, in the future there will
-        be a reference counting system that will automatically
-        delete unused resources.
-
-        */
-
-        // delete _mesh;
-        // delete _mat;
-        // delete _renderer;
-        // delete _window;
     }
 }

@@ -126,7 +126,7 @@ namespace Acroy
         PipelineKey key{};
         key.fs = mat->GetFS();
         key.vs = mat->GetVS();
-        key.primitive = PrimitiveType::TriangleList;
+        key.primitive = mesh->GetPrimitiveType();
         key.vertexAttributes = mesh->GetVertexAttributes();
 
         GraphicsPipeline* pipeline = _pipelineCache.GetOrCreate(key);
@@ -138,7 +138,7 @@ namespace Acroy
         const auto& textures = mat->GetTextures();
         const auto& samplers = mat->GetSamplers();
 
-        for (u32 slot = 0; slot < (u32)textures.size(); ++slot)
+        for (u32 slot = 0; slot < textures.size(); slot++)
         {
             if (textures[slot])
                 RHI::BindTexture(slot, textures.at(slot));

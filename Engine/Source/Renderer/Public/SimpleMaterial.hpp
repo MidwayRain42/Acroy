@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Material.hpp"
+#include <memory>
 
 namespace Acroy
 {
@@ -11,15 +12,18 @@ namespace Acroy
     {
     public:  
         SimpleMaterial();
+        ~SimpleMaterial();
 
         void SetColor(f32 v[4]);
-        void SetTexture(Texture* tex);
+        void SetTexture(const std::shared_ptr<Texture>& tex);
 
     private:
         static MaterialDesc CreateDesc();
 
     private:
         Sampler* _sampler;
+
+        std::shared_ptr<Texture> _texture;
     };
 
 }

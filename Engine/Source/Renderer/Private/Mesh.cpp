@@ -42,6 +42,7 @@ namespace Acroy
         _indexCount = data.indexCount;
 
         _vertexAttributes = data.layout.attribs;
+        _primitiveType    = PrimitiveType::TriangleList;
     }
 
     Mesh::~Mesh()

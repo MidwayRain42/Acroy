@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Window.hpp"
+#include <memory>
 
 namespace Acroy
 {
@@ -17,11 +18,11 @@ namespace Acroy
         void Run();
 
     private:
-        Window* _window;
+        std::unique_ptr<Window>         _window;
+        std::unique_ptr<Renderer>       _renderer;
 
-        Mesh* _mesh;
-        SimpleMaterial* _mat;
+        std::shared_ptr<Mesh>           _mesh;
+        std::shared_ptr<SimpleMaterial> _mat;
 
-        Renderer* _renderer;
     };
 }

@@ -11,22 +11,28 @@ namespace Acroy
         _sampler = SamplerFactory::NearestRepeat();
     }
 
+    SimpleMaterial::~SimpleMaterial()
+    {
+        delete _sampler;
+    }
+
     void SimpleMaterial::SetColor(f32 v[4])
     {
         SetParamFloat4("color", v[0], v[1], v[2], v[3]);
     }
 
-    void SimpleMaterial::SetTexture(Texture* tex)
+    void SimpleMaterial::SetTexture(const std::shared_ptr<Texture>& tex)
     {
-        SetParamTexture("texture", tex);
+        _texture = tex;
+        SetParamTexture("texture", tex.get());
         SetParamSampler("texture", _sampler);
         SetParamInt("useTexture", 1);
     }
 
     MaterialDesc SimpleMaterial::CreateDesc()
     {
-        std::vector<u8> vsBinary = LoadFileBinary("/home/sam/Projects/Acroy/Bin/Shaders/vertex.spv");
-        std::vector<u8> fsBinary = LoadFileBinary("/home/sam/Projects/Acroy/Bin/Shaders/fragment.spv");
+        static std::vector<u8> vsBinary = LoadFileBinary("/home/sam/Projects/Acroy/Bin/Shaders/vertex.spv");
+        static std::vector<u8> fsBinary = LoadFileBinary("/home/sam/Projects/Acroy/Bin/Shaders/fragment.spv");
 
         ShaderDesc vsDesc{};
         vsDesc.entryPoint = "main";
@@ -40,8 +46,8 @@ namespace Acroy
         fsDesc.size       = fsBinary.size();
         fsDesc.binary     = fsBinary.data();
 
-        Shader* vs = new Shader(vsDesc);
-        Shader* fs = new Shader(fsDesc);
+        static Shader* vs = new Shader(vsDesc);
+        static Shader* fs = new Shader(fsDesc);
 
         MaterialDesc desc{};
         desc.vs = vs;

@@ -35,18 +35,20 @@ namespace Acroy
         Mesh(const MeshData& data, bool isStatic = true);
         ~Mesh();
 
-        Buffer* GetVertexBuffer() const { return _vertexBuffer; }
-        Buffer* GetIndexBuffer()  const { return _indexBuffer; }
+        inline Buffer* GetVertexBuffer() const { return _vertexBuffer; }
+        inline Buffer* GetIndexBuffer()  const { return _indexBuffer; }
 
         inline u32 GetIndexCount() const { return _indexCount; }
+        inline PrimitiveType GetPrimitiveType() const { return _primitiveType; }
 
         inline const std::vector<VertexAttribute>& GetVertexAttributes() const { return _vertexAttributes; }
 
     private:
         Buffer* _vertexBuffer;
         Buffer* _indexBuffer;
-        u32 _indexCount;
+        u32     _indexCount;
 
+        PrimitiveType _primitiveType;
         std::vector<VertexAttribute> _vertexAttributes;
     };
 }
