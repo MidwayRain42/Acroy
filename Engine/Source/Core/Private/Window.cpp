@@ -1,5 +1,6 @@
 #include "Window.hpp"
 #include <GLFW/glfw3.h>
+#include "Events.hpp"
 #include <stdexcept>
 
 namespace Acroy
@@ -23,6 +24,85 @@ namespace Acroy
         }
 
         glfwMakeContextCurrent(_window);
+
+        glfwSetWindowUserPointer(_window, &_eventCallback);
+
+        glfwSetWindowCloseCallback(_window, [](GLFWwindow* window)
+        {
+            auto& eventCallbackFn = *static_cast<std::function<void(Event&)>*>(glfwGetWindowUserPointer(window));
+            WindowCloseEvent e;
+            eventCallbackFn(e);
+        });
+
+        glfwSetWindowSizeCallback(_window, [](GLFWwindow* window, int width, int height)
+        {
+            auto& eventCallbackFn = *static_cast<std::function<void(Event&)>*>(glfwGetWindowUserPointer(window));
+            WindowResizeEvent e(width, height);
+            eventCallbackFn(e);
+        });
+
+        glfwSetCursorPosCallback(_window, [](GLFWwindow* window, double xpos, double ypos)
+        {
+            auto& eventCallbackFn = *static_cast<std::function<void(Event&)>*>(glfwGetWindowUserPointer(window));
+            MouseMovedEvent e(static_cast<f32>(xpos), static_cast<f32>(ypos));
+            eventCallbackFn(e);
+        });
+
+        glfwSetScrollCallback(_window, [](GLFWwindow* window, double xoffset, double yoffset)
+        {
+            auto& eventCallbackFn = *static_cast<std::function<void(Event&)>*>(glfwGetWindowUserPointer(window));
+            MouseScrolledEvent e(static_cast<f32>(xoffset), static_cast<f32>(yoffset));
+            eventCallbackFn(e);
+        });
+
+        glfwSetKeyCallback(_window, [](GLFWwindow* window, int key, int scancode, int action, int mods)
+        {
+            auto& eventCallbackFn = *static_cast<std::function<void(Event&)>*>(glfwGetWindowUserPointer(window));
+            
+            switch (action)
+            {
+                case GLFW_PRESS:
+                {
+                    KeyPressedEvent e(key, false);
+                    eventCallbackFn(e);
+                    break;
+                }
+                case GLFW_RELEASE:
+                {
+                    KeyReleasedEvent e(key);
+                    eventCallbackFn(e);
+                    break;
+                }
+                case GLFW_REPEAT:
+                {
+                    KeyPressedEvent e(key, true);
+                    eventCallbackFn(e);
+                    break;
+                }
+            }
+        });
+
+        glfwSetMouseButtonCallback(_window, [](GLFWwindow* window, int button, int action, int mods)
+        {
+            auto& eventCallbackFn = *static_cast<std::function<void(Event&)>*>(glfwGetWindowUserPointer(window));
+
+            switch (action)
+            {
+                case GLFW_PRESS:
+                {
+                    MouseButtonPressedEvent e(button);
+                    eventCallbackFn(e);
+                    break;
+                }
+
+                case GLFW_RELEASE:
+                {
+                    MouseButtonReleasedEvent e(button);
+                    eventCallbackFn(e);
+                    break;
+                }
+            }
+        });
     }
 
     Window::~Window()
@@ -40,9 +120,13 @@ namespace Acroy
         return static_cast<f32>(glfwGetTime());
     }
 
-    void Window::Update()
+    void Window::PollEvents()
     {
         glfwPollEvents();
+    }
+
+    void Window::SwapBuffers()
+    {
         glfwSwapBuffers(_window);
     }
 

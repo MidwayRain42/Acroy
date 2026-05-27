@@ -46,6 +46,7 @@ namespace Acroy
         Renderer(const RendererDesc& desc);
         ~Renderer();
 
+        void ResizeFrameBuffer(s32 x, s32 y);
         void BeginFrame();
         void EndFrame();
 

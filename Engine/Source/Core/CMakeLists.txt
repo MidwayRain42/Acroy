@@ -9,6 +9,8 @@ target_sources(AcroyCore
         Public/Engine.hpp
         Public/Window.hpp
         Public/Types.hpp
+        Public/Layer.hpp
+        Public/Events.hpp
 )
 
 target_include_directories(AcroyCore

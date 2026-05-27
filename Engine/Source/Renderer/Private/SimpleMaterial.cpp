@@ -31,8 +31,8 @@ namespace Acroy
 
     MaterialDesc SimpleMaterial::CreateDesc()
     {
-        static std::vector<u8> vsBinary = LoadFileBinary("/home/sam/Projects/Acroy/Bin/Shaders/vertex.spv");
-        static std::vector<u8> fsBinary = LoadFileBinary("/home/sam/Projects/Acroy/Bin/Shaders/fragment.spv");
+        static std::vector<u8> vsBinary = LoadFileBinary("Bin/Shaders/vertex.spv");
+        static std::vector<u8> fsBinary = LoadFileBinary("Bin/Shaders/fragment.spv");
 
         ShaderDesc vsDesc{};
         vsDesc.entryPoint = "main";

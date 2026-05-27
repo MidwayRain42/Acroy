@@ -1,13 +1,15 @@
 #pragma once
 
-#include "Window.hpp"
+#include "Layer.hpp"
+
 #include <memory>
+#include <vector>
 
 namespace Acroy
 {
+    class Window;
+    class Event;
     class Renderer;
-    class Mesh;
-    class SimpleMaterial;
 
     class Engine
     {
@@ -15,14 +17,34 @@ namespace Acroy
         Engine();
         ~Engine();
 
+        void OnEvent(Event& event);
         void Run();
 
+        template<typename TLayer, typename... Args>
+        TLayer* PushLayer(Args&&... args)
+        {
+            static_assert(std::is_base_of_v<Layer, TLayer>);
+
+            auto layer = std::make_unique<TLayer>(
+                std::forward<Args>(args)...
+            );
+
+            TLayer* raw = layer.get();
+
+            _layers.push_back(std::move(layer));
+            raw->OnAttach();
+
+            return raw;
+        }
+
+        void PopLayer(Layer* layer);
+
     private:
-        std::unique_ptr<Window>         _window;
-        std::unique_ptr<Renderer>       _renderer;
+        std::vector<std::unique_ptr<Layer>> _layers;
 
-        std::shared_ptr<Mesh>           _mesh;
-        std::shared_ptr<SimpleMaterial> _mat;
+        std::unique_ptr<Window>   _window;
+        std::unique_ptr<Renderer> _renderer;
 
+        bool _running = true;
     };
 }

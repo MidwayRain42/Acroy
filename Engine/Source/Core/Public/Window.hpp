@@ -2,6 +2,7 @@
 
 #include "Types.hpp"
 #include <glm/vec2.hpp>
+#include <functional>
 
 typedef struct GLFWwindow GLFWwindow;
 
@@ -15,6 +16,8 @@ namespace Acroy
         const char *title;
     };
 
+    class Event;
+
     class Window
     {
     public:
@@ -23,7 +26,13 @@ namespace Acroy
         Window(const WindowProps& props);
         ~Window();
 
-        void Update();
+        void PollEvents();
+        void SwapBuffers();
+
+        void SetEventCallback(std::function<void(Event&)> fn)
+        {
+            _eventCallback = fn;
+        }
 
         bool ShouldClose() const;
 
@@ -42,5 +51,7 @@ namespace Acroy
     private:
         GLFWwindow* _window;
         WindowProps _props;
+
+        std::function<void(Event&)> _eventCallback;
     };
 }

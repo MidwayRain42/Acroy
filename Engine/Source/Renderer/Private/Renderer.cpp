@@ -98,11 +98,13 @@ namespace Acroy
         _frameBuffer = new FrameBuffer(fbDesc);
     }
 
-    void Renderer::BeginFrame()
+    void Renderer::ResizeFrameBuffer(s32 x, s32 y)
     {
-        const glm::ivec2 windowSize = _window->GetSize();
-        _frameBuffer->Resize(windowSize);
+        _frameBuffer->Resize({x, y});
+    }
 
+    void Renderer::BeginFrame()
+    {      
         RHI::BeginRenderPass(_frameBuffer, {
             .clearColor = glm::vec4(0.0f)
         });

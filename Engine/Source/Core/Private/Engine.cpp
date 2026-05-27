@@ -1,62 +1,111 @@
 #include "Types.hpp"
 #include "Engine.hpp"
-
-// Renderer
+#include "Window.hpp"
+#include "Events.hpp"
 #include "Renderer.hpp"
-#include "Mesh.hpp"
-#include "SimpleMaterial.hpp"
-#include "Texture.hpp"
 
-// Res
-#include "MeshFactory.hpp"
-#include "TextureLoader.hpp"
-
-// STL
 #include <iostream>
-
+#include <ranges>
+#include <algorithm>
 
 namespace Acroy
 {
-    Engine::Engine()
+    Engine::Engine() : _running(true)
     {
-        _window = std::make_unique<Window>(WindowProps {
+        _window = std::make_unique<Window>(Acroy::WindowProps {
             .width      = 1920,
             .height     = 1080,
             .fullscreen = true,
             .title      = "Acroy Engine"
         });
 
+        _window->SetEventCallback(std::bind(&Engine::OnEvent, this, std::placeholders::_1));
+
         _renderer = std::make_unique<Renderer>(RendererDesc {
-            .window      = _window.get(),
-            .enableVSync = true
+            .window = _window.get(),
+            .enableVSync = false
         });
+    }
 
-        _mesh = std::shared_ptr<Mesh>(
-            MeshFactory::CreateQuad()
+    void Engine::PopLayer(Layer* layer)
+    {
+        auto it = std::find_if(_layers.begin(), _layers.end(),
+            [layer](const std::unique_ptr<Layer>& ptr) {
+                return ptr.get() == layer;
+            }
         );
 
-        _mat = std::make_shared<SimpleMaterial>();
+        if (it != _layers.end())
+        {
+            (*it)->OnDetach();
+            _layers.erase(it);
+        }
+    }
 
-        _mat->SetTexture(
-            std::shared_ptr<Texture>(TextureLoader::FromFile("/home/sam/Pictures/gruvbox/beach.jpg"))
-        );
+    void Engine::OnEvent(Event& event)
+    {
+        switch (event.GetEventType())
+        {
+            case EventType::WindowClose:
+            {
+                _running = false;
+                break;
+            }
 
+            case EventType::WindowResize:
+            {
+                const auto& e = static_cast<const WindowResizeEvent&>(event);
+                _renderer->ResizeFrameBuffer(e.GetWidth(), e.GetHeight());
+                break;
+            }
+
+            default: break;
+        }
+
+        if (event.GetEventType() == EventType::WindowClose) _running = false;
+
+        for (auto& layer : std::views::reverse(_layers)) {
+			layer->OnEvent(event);
+			if (event.handled)
+				break;
+		}
     }
 
     void Engine::Run()
     {
-        while (!_window->ShouldClose())
+        f32 deltaTime = 0.0f;
+        f32 lastFrame = 0.0f;
+
+        while (_running)
         {
+            _window->PollEvents();
+
+            f32 currentFrame = _window->GetTime();
+            deltaTime = currentFrame - lastFrame;
+            lastFrame = currentFrame;
+
+            for (const std::unique_ptr<Layer>& layer : _layers) {
+                layer->OnUpdate(deltaTime);
+            }
+
             _renderer->BeginFrame();
-            _renderer->DrawMesh(_mesh.get(), _mat.get());
-            _renderer->EndFrame();
             
-            _window->Update();
+            for (const std::unique_ptr<Layer>& layer : _layers) {
+                layer->OnRender(*_renderer);
+            }
+
+            _renderer->EndFrame();
+            _window->SwapBuffers();
         }
     }
 
     Engine::~Engine()
     {
         std::cout << "Shutting down engine..." << std::endl;
+
+        for (auto& layer : _layers)
+            layer->OnDetach();
+        
+        _layers.clear();
     }
 }
