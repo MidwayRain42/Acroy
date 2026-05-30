@@ -78,4 +78,13 @@ namespace Acroy
 
         return { vertexAttributes };
     }
+
+    VertexLayout VertexLayout::PosNormalUV()
+    {
+        // Same Layout as PosColorUV
+        VertexLayout layout = PosColorUV();
+        layout.attribs[1].debugName = "aNormal";
+
+        return layout;
+    }
 }

@@ -4,9 +4,11 @@
 #include "FrameBuffer.hpp"
 #include "RHI.hpp"
 #include "GraphicsPipeline.hpp"
-
+#include "Buffer.hpp"
 #include "Mesh.hpp"
 #include "Material.hpp"
+#include "Events.hpp"
+#include "Camera.hpp"
 
 #include <iostream>
 #include <unordered_map>
@@ -60,7 +62,7 @@ namespace Acroy
     {
         for (auto& [key, pipeline] : _pipelines)
             delete pipeline;
-    }
+    }    
 
     Renderer::Renderer(const RendererDesc& desc) : _window(desc.window)
     {
@@ -96,6 +98,15 @@ namespace Acroy
         fbDesc.depthAttachment = depthTexture;
 
         _frameBuffer = new FrameBuffer(fbDesc);
+
+        BufferDesc perFrameUBODesc{};
+        perFrameUBODesc.cpuWritable = true;
+        perFrameUBODesc.persistentMap = true;
+        perFrameUBODesc.type = BufferType::Uniform;
+        perFrameUBODesc.usage = BufferUsage::Dynamic;
+        perFrameUBODesc.size = sizeof(PerFrameData);
+
+        _perFrameUniform = new Buffer(perFrameUBODesc);
     }
 
     void Renderer::ResizeFrameBuffer(s32 x, s32 y)
@@ -108,6 +119,18 @@ namespace Acroy
         RHI::BeginRenderPass(_frameBuffer, {
             .clearColor = glm::vec4(0.0f)
         });
+
+        if (_cam)
+        {
+            _perFrameData.view = _cam->GetTransform().GetMatrix();
+            _perFrameData.proj = _cam->GetProj();
+        }
+        
+        _perFrameData.time = _window->GetTime();
+
+        _perFrameUniform->UploadData(&_perFrameData, sizeof(PerFrameData));
+
+        RHI::BindUniformBuffer(0, _perFrameUniform);
     }
 
     void Renderer::EndFrame()
@@ -123,7 +146,7 @@ namespace Acroy
         RHI::DrawIndexed(mesh->GetIndexCount());
     }
 
-    void Renderer::DrawMesh(Mesh* mesh, Material* mat)
+    void Renderer::DrawMesh(Mesh* mesh, Material* mat, const Transform& transform)
     {
         PipelineKey key{};
         key.fs = mat->GetFS();
@@ -131,11 +154,13 @@ namespace Acroy
         key.primitive = mesh->GetPrimitiveType();
         key.vertexAttributes = mesh->GetVertexAttributes();
 
+        _perFrameData.model = transform.GetMatrix();
+
         GraphicsPipeline* pipeline = _pipelineCache.GetOrCreate(key);
 
         RHI::BindGraphicsPipeline(pipeline);
 
-        RHI::BindUniformBuffer(0, mat->GetParamBuffer(), 0);
+        RHI::BindUniformBuffer(1, mat->GetParamBuffer());
 
         const auto& textures = mat->GetTextures();
         const auto& samplers = mat->GetSamplers();
@@ -152,9 +177,20 @@ namespace Acroy
         DrawMesh(mesh);
     }
 
+    void Renderer::SetCamera(Camera& cam)
+    {
+        _cam = &cam;
+    }
+
+    void Renderer::OnWindowResize(WindowResizeEvent& event)
+    {
+        _cam->Resize(event.GetWidth(), event.GetHeight());
+        ResizeFrameBuffer(event.GetWidth(), event.GetHeight());
+    }
 
     Renderer::~Renderer()
     {
         delete _frameBuffer;
+        delete _perFrameUniform;
     }
 }

@@ -21,11 +21,6 @@ namespace Acroy
     {
         std::cout << "Creating new Graphics Pipeline" << std::endl;
 
-        if (desc.vertexAttributes.size() > 0)
-        {
-            _desc = desc;
-        }
-
         _handle = glCreateProgram();
 
         glAttachShader(_handle, desc.vertexShader->GetHandle());

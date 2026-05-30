@@ -12,6 +12,9 @@ target_sources(AcroyRenderer
         Public/Mesh.hpp
         Public/Material.hpp
         Public/SimpleMaterial.hpp
+        Public/Camera.hpp
+        Public/PerspectiveCamera.hpp
+        Public/Transform.hpp
 )
 
 target_include_directories(AcroyRenderer

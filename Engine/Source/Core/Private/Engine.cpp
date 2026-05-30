@@ -3,6 +3,7 @@
 #include "Window.hpp"
 #include "Events.hpp"
 #include "Renderer.hpp"
+#include "Input.hpp"
 
 #include <iostream>
 #include <ranges>
@@ -25,6 +26,8 @@ namespace Acroy
             .window = _window.get(),
             .enableVSync = false
         });
+
+        Input::Init(_window.get());
     }
 
     void Engine::PopLayer(Layer* layer)
@@ -54,8 +57,8 @@ namespace Acroy
 
             case EventType::WindowResize:
             {
-                const auto& e = static_cast<const WindowResizeEvent&>(event);
-                _renderer->ResizeFrameBuffer(e.GetWidth(), e.GetHeight());
+                auto& e = static_cast<WindowResizeEvent&>(event);
+                _renderer->OnWindowResize(e);
                 break;
             }
 

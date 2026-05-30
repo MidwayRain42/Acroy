@@ -4,6 +4,8 @@
 
 #include "stb_image.h"
 
+#include <cassert>
+
 namespace Acroy
 {
     Texture* TextureLoader::FromFile(const char* path)
@@ -53,6 +55,17 @@ namespace Acroy
         SamplerDesc desc{};
         desc.magFilter = SamplerFilter::Nearest;
         desc.minFilter = SamplerFilter::Nearest;
+        desc.wrapS = SamplerWrap::Repeat;
+        desc.wrapT = SamplerWrap::Repeat;
+
+        return new Sampler(desc);
+    }
+
+    Sampler* SamplerFactory::LinearRepeat()
+    {
+        SamplerDesc desc{};
+        desc.magFilter = SamplerFilter::Linear;
+        desc.minFilter = SamplerFilter::Linear;
         desc.wrapS = SamplerWrap::Repeat;
         desc.wrapT = SamplerWrap::Repeat;
 

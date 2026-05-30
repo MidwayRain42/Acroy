@@ -4,6 +4,7 @@ target_sources(AcroyCore
     PRIVATE
         Private/Engine.cpp
         Private/Window.cpp
+        Private/Input.cpp
         
     PUBLIC
         Public/Engine.hpp
@@ -11,6 +12,7 @@ target_sources(AcroyCore
         Public/Types.hpp
         Public/Layer.hpp
         Public/Events.hpp
+        Public/Input.hpp
 )
 
 target_include_directories(AcroyCore

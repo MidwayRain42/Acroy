@@ -14,7 +14,7 @@ namespace Acroy
         std::vector<VertexAttribute> attribs;
 
         static VertexLayout PosColorUV();
-        // static VertexLayout PosNormalUV();
+        static VertexLayout PosNormalUV();
         // static VertexLayout PosOnly();
     };
 

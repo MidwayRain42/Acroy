@@ -8,7 +8,7 @@ namespace Acroy
 {
     SimpleMaterial::SimpleMaterial() : Material(CreateDesc())
     {
-        _sampler = SamplerFactory::NearestRepeat();
+        _sampler = SamplerFactory::LinearRepeat();
     }
 
     SimpleMaterial::~SimpleMaterial()
@@ -16,15 +16,14 @@ namespace Acroy
         delete _sampler;
     }
 
-    void SimpleMaterial::SetColor(f32 v[4])
+    void SimpleMaterial::SetColor(const glm::vec4& color)
     {
-        SetParamFloat4("color", v[0], v[1], v[2], v[3]);
+        SetParamVector4("color", color);
     }
 
-    void SimpleMaterial::SetTexture(const std::shared_ptr<Texture>& tex)
+    void SimpleMaterial::SetTexture(Texture* tex)
     {
-        _texture = tex;
-        SetParamTexture("texture", tex.get());
+        SetParamTexture("texture", tex);
         SetParamSampler("texture", _sampler);
         SetParamInt("useTexture", 1);
     }

@@ -3,6 +3,7 @@
 #include "Buffer.hpp"
 #include "Texture.hpp"
 
+#include <glm/gtc/type_ptr.hpp>
 #include <cassert>
 
 namespace Acroy {
@@ -110,32 +111,28 @@ namespace Acroy {
         UploadParam(name, &v, sizeof(f32));
     }
 
-    void Material::SetParamFloat2(const char* name, f32 x, f32 y)
+    void Material::SetParamVector2(const char* name, const glm::vec2& v)
     {
         assert(_paramMap.count(name) && _paramMap.at(name).type == MaterialParamType::Float2);
-        f32 v[2] = { x, y };
-        UploadParam(name, v, sizeof(f32) * 2);
+        UploadParam(name, glm::value_ptr(v), sizeof(f32) * 2);
     }
 
-    void Material::SetParamFloat3(const char* name, f32 x, f32 y, f32 z)
+    void Material::SetParamVector3(const char* name, const glm::vec3& v)
     {
         assert(_paramMap.count(name) && _paramMap.at(name).type == MaterialParamType::Float3);
-        f32 v[3] = { x, y, z };
-        UploadParam(name, v, sizeof(f32) * 3);
+        UploadParam(name, glm::value_ptr(v), sizeof(f32) * 3);
     }
 
-    void Material::SetParamFloat4(const char* name, f32 x, f32 y, f32 z, f32 w)
+    void Material::SetParamVector4(const char* name, const glm::vec4& v)
     {
         assert(_paramMap.count(name) && _paramMap.at(name).type == MaterialParamType::Float4);
-
-        f32 v[4] = { x, y, z, w };
-        UploadParam(name, v, sizeof(f32) * 4);
+        UploadParam(name, glm::value_ptr(v), sizeof(f32) * 4);
     }
 
-    void Material::SetParamMatrix4x4(const char* name, const f32* colMajor16)
+    void Material::SetParamMatrix4(const char* name, const glm::mat4& v)
     {
         assert(_paramMap.count(name) && _paramMap.at(name).type == MaterialParamType::Matrix4x4);
-        UploadParam(name, colMajor16, sizeof(f32) * 16);
+        UploadParam(name, glm::value_ptr(v), sizeof(f32) * 16);
     }
 
 

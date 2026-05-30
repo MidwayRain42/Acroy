@@ -13,7 +13,7 @@ namespace Acroy {
     class SamplerFactory {
     public:
         static Sampler* NearestRepeat();
-        // static Sampler* LinearRepeat();
+        static Sampler* LinearRepeat();
     };
 
 }

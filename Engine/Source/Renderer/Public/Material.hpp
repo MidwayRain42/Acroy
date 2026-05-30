@@ -1,9 +1,15 @@
 #pragma once
 
 #include "Types.hpp"
+
 #include <unordered_map>
 #include <string>
 #include <vector>
+
+#include <glm/vec2.hpp>
+#include <glm/vec3.hpp>
+#include <glm/vec4.hpp>
+#include <glm/mat4x4.hpp>
 
 namespace Acroy {
 
@@ -61,12 +67,12 @@ public:
     Material(const MaterialDesc& desc);
     ~Material();
 
-    void SetParamInt       (const char* name, s32 v);
-    void SetParamFloat     (const char* name, f32 v);
-    void SetParamFloat2    (const char* name, f32 x, f32 y);
-    void SetParamFloat3    (const char* name, f32 x, f32 y, f32 z);
-    void SetParamFloat4    (const char* name, f32 x, f32 y, f32 z, f32 w);
-    void SetParamMatrix4x4 (const char* name, const f32* colMajor16);
+    void SetParamInt        (const char* name, s32 v);
+    void SetParamFloat      (const char* name, f32 v);
+    void SetParamVector2    (const char* name, const glm::vec2& v);
+    void SetParamVector3    (const char* name, const glm::vec3& v);
+    void SetParamVector4    (const char* name, const glm::vec4& v);
+    void SetParamMatrix4    (const char* name, const glm::mat4& v);
 
     void SetParamTexture(const char* name, Texture* texture);
     void SetParamSampler(const char* name, Sampler* sampler);

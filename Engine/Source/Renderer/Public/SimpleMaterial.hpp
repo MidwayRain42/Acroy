@@ -14,16 +14,14 @@ namespace Acroy
         SimpleMaterial();
         ~SimpleMaterial();
 
-        void SetColor(f32 v[4]);
-        void SetTexture(const std::shared_ptr<Texture>& tex);
+        void SetColor(const glm::vec4& color);
+        void SetTexture(Texture* tex);
 
     private:
         static MaterialDesc CreateDesc();
 
     private:
         Sampler* _sampler;
-
-        std::shared_ptr<Texture> _texture;
     };
 
 }
