@@ -1,6 +1,7 @@
 #include "Mesh.hpp"
 #include "Buffer.hpp"
-#include "GraphicsPipeline.hpp"
+#include "VertexArray.hpp"
+#include "RenderContext.hpp"
 
 namespace Acroy
 {
@@ -25,30 +26,41 @@ namespace Acroy
         indexBufferDesc.usage = BufferUsage::Static;
         
 
-        _vertexBuffer = new Buffer(vertexBufferDesc);
+        m_vertexBuffer = new Buffer(vertexBufferDesc);
 
-        _vertexBuffer->UploadData(
+        m_vertexBuffer->UploadData(
             static_cast<const void*>(data.vertices),
             data.verticesSize
         );
 
-        _indexBuffer = new Buffer(indexBufferDesc);
+        m_indexBuffer = new Buffer(indexBufferDesc);
 
-        _indexBuffer->UploadData(
+        m_indexBuffer->UploadData(
             static_cast<const void*>(data.indices),
             data.indexCount * sizeof(u32)
         );
 
-        _indexCount = data.indexCount;
+        m_indexCount = data.indexCount;
 
-        _vertexAttributes = data.layout.attribs;
+        m_vertexArray = new VertexArray();
+
+        m_vertexArray->AddVertexBuffer(
+            m_vertexBuffer,
+            data.layout.attribs.data(),
+            data.layout.attribs.size(),
+            0, 0, data.layout.attribs.at(0).stride
+        );
+
+        m_vertexArray->SetIndexBuffer(m_indexBuffer);
+        // m_vertexAttributes = data.layout.attribs;
         _primitiveType    = PrimitiveType::TriangleList;
     }
 
     Mesh::~Mesh()
     {
-        delete _vertexBuffer;
-        delete _indexBuffer;
+        delete m_vertexArray;
+        delete m_vertexBuffer;
+        delete m_indexBuffer;
     }
 
     VertexLayout VertexLayout::PosColorUV()
@@ -60,21 +72,18 @@ namespace Acroy
         vertexAttributes[0].stride = sizeof(float) * 8;
         vertexAttributes[0].offset = 0;
         vertexAttributes[0].type = Type::Float;
-        vertexAttributes[0].debugName = "aPosition";
 
         vertexAttributes[1].location = 1;
         vertexAttributes[1].componentCount = 3;
         vertexAttributes[1].stride = sizeof(float) * 8;
         vertexAttributes[1].offset = sizeof(float) * 3;
         vertexAttributes[1].type = Type::Float;
-        vertexAttributes[1].debugName = "aColor";
 
         vertexAttributes[2].location = 2;
         vertexAttributes[2].componentCount = 2;
         vertexAttributes[2].stride = sizeof(float) * 8;
         vertexAttributes[2].offset = sizeof(float) * 6;
         vertexAttributes[2].type = Type::Float;
-        vertexAttributes[2].debugName = "aTexCoord";
 
         return { vertexAttributes };
     }
@@ -83,7 +92,6 @@ namespace Acroy
     {
         // Same Layout as PosColorUV
         VertexLayout layout = PosColorUV();
-        layout.attribs[1].debugName = "aNormal";
 
         return layout;
     }

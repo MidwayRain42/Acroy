@@ -1,19 +1,26 @@
 #include "SimpleMaterial.hpp"
 #include "Shader.hpp"
-#include "FileUtils.hpp"
 #include "Texture.hpp"
-#include "TextureLoader.hpp"
+#include "ResourceManager.hpp"
 
 namespace Acroy
 {
-    SimpleMaterial::SimpleMaterial() : Material(CreateDesc())
+    SimpleMaterial::SimpleMaterial()
     {
-        _sampler = SamplerFactory::LinearRepeat();
+        SamplerDesc sd{};
+        sd.magFilter = SamplerFilter::Linear;
+        sd.minFilter = SamplerFilter::Linear;
+        sd.wrapS     = SamplerWrap::Repeat;
+        sd.wrapT     = SamplerWrap::Repeat;
+        
+        m_sampler = std::make_unique<Sampler>(sd);
+
+        SetDescription(CreateDesc());
     }
 
-    SimpleMaterial::~SimpleMaterial()
+    void SimpleMaterial::SetUVScale(const glm::vec2& scale)
     {
-        delete _sampler;
+        SetParamVector2("uvScale", scale);
     }
 
     void SimpleMaterial::SetColor(const glm::vec4& color)
@@ -24,46 +31,25 @@ namespace Acroy
     void SimpleMaterial::SetTexture(Texture* tex)
     {
         SetParamTexture("texture", tex);
-        SetParamSampler("texture", _sampler);
+        SetParamSampler("texture", m_sampler.get());
         SetParamInt("useTexture", 1);
     }
 
     MaterialDesc SimpleMaterial::CreateDesc()
     {
-        static std::vector<u8> vsBinary = LoadFileBinary("Bin/Shaders/vertex.spv");
-        static std::vector<u8> fsBinary = LoadFileBinary("Bin/Shaders/fragment.spv");
-
-        ShaderDesc vsDesc{};
-        vsDesc.entryPoint = "main";
-        vsDesc.stage      = ShaderStage::Vertex;
-        vsDesc.size       = vsBinary.size();
-        vsDesc.binary     = vsBinary.data();
-
-        ShaderDesc fsDesc{};
-        fsDesc.entryPoint = "main";
-        fsDesc.stage      = ShaderStage::Fragment;
-        fsDesc.size       = fsBinary.size();
-        fsDesc.binary     = fsBinary.data();
-
-        static Shader* vs = new Shader(vsDesc);
-        static Shader* fs = new Shader(fsDesc);
+        m_vs = ResourceManager::LoadShader("Bin/Shaders/SimpleVert.spv", ShaderStage::Vertex);
+        m_fs = ResourceManager::LoadShader("Bin/Shaders/SimpleFrag.spv", ShaderStage::Fragment);
 
         MaterialDesc desc{};
-        desc.vs = vs;
-        desc.fs = fs;
+        desc.vs = m_vs.get();
+        desc.fs = m_fs.get();
 
-        static MaterialParam params [3]{};
-        params[0].name = "color";
-        params[0].type = MaterialParamType::Float4;
-
-        params[1].name = "texture";
-        params[1].type = MaterialParamType::Texture;
-
-        params[2].name = "useTexture";
-        params[2].type = MaterialParamType::Int;
-
-        desc.paramCount = 3;
-        desc.params     = params;
+        desc.params = {
+            { "color",      MaterialParamType::Float4  },
+            { "texture",    MaterialParamType::Texture },
+            { "useTexture", MaterialParamType::Int     },
+            { "uvScale",    MaterialParamType::Float2  }
+        };
 
         return desc;
     }

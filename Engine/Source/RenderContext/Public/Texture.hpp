@@ -5,7 +5,7 @@
 
 namespace Acroy
 {
-    enum class Format { RGBA8, RGBA16, RGB8, DEPTH_COMPONENT24, DEPTH24_STENCIL8, DEPTH32F_STENCIL8 };
+    enum class Format { RGBA8, RGBA16, RGB8, DEPTH_COMPONENT24, DEPTH24_STENCIL8, DEPTH32F_STENCIL8, RED };
     enum class TextureType { Texture2D };
 
     struct TextureDesc

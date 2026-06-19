@@ -2,12 +2,15 @@
 
 #include "Types.hpp"
 #include <glm/vec3.hpp>
-#include "GraphicsPipeline.hpp"
+#include <vector>
+#include "VertexArray.hpp"
 
 namespace Acroy
 {
-    struct VertexAttribute;
     class Buffer;
+    class VertexArray;
+
+    enum class PrimitiveType;
 
     struct VertexLayout
     {
@@ -35,20 +38,23 @@ namespace Acroy
         Mesh(const MeshData& data, bool isStatic = true);
         ~Mesh();
 
-        inline Buffer* GetVertexBuffer() const { return _vertexBuffer; }
-        inline Buffer* GetIndexBuffer()  const { return _indexBuffer; }
+        VertexArray* GetVertexArray() const { return m_vertexArray; }
 
-        inline u32 GetIndexCount() const { return _indexCount; }
+        Buffer* GetVertexBuffer() const { return m_vertexBuffer; }
+        Buffer* GetIndexBuffer()  const { return m_indexBuffer; }
+
+        u32 GetIndexCount() const { return m_indexCount; }
         inline PrimitiveType GetPrimitiveType() const { return _primitiveType; }
 
-        inline const std::vector<VertexAttribute>& GetVertexAttributes() const { return _vertexAttributes; }
+        // const std::vector<VertexAttribute>& GetVertexAttributes() const { return _vertexAttributes; }
 
     private:
-        Buffer* _vertexBuffer;
-        Buffer* _indexBuffer;
-        u32     _indexCount;
+        VertexArray* m_vertexArray;
+        Buffer*      m_vertexBuffer;
+        Buffer*      m_indexBuffer;
+        u32          m_indexCount;
 
         PrimitiveType _primitiveType;
-        std::vector<VertexAttribute> _vertexAttributes;
+        // std::vector<VertexAttribute> _vertexAttributes;
     };
 }

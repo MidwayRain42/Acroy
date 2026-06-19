@@ -2,11 +2,9 @@ add_library(Acroy STATIC)
 
 add_subdirectory(Source/Renderer)
 add_subdirectory(Source/Core)
-add_subdirectory(Source/RHI)
-add_subdirectory(Source/Resources)
+add_subdirectory(Source/RenderContext)
 
-target_link_libraries(Acroy PUBLIC AcroyCore AcroyRHI AcroyRenderer AcroyResources)
-
+target_link_libraries(Acroy PUBLIC AcroyCore AcroyRenderContext AcroyRenderer)
 
 find_program(GLSLANG glslangValidator REQUIRED)
 
@@ -30,16 +28,15 @@ function(compile_glsl SHADER STAGE OUT_FILE)
 
 endfunction()
 
-# Shader definitions
+
 set(VERT_SRC Shaders/SimpleVert.glsl)
 set(FRAG_SRC Shaders/SimpleFrag.glsl)
 
-set(VERT_SPV ${CMAKE_BINARY_DIR}/Shaders/vertex.spv)
-set(FRAG_SPV ${CMAKE_BINARY_DIR}/Shaders/fragment.spv)
+set(VERT_SPV ${CMAKE_BINARY_DIR}/Shaders/SimpleVert.spv)
+set(FRAG_SPV ${CMAKE_BINARY_DIR}/Shaders/SimpleFrag.spv)
 
 compile_glsl(${VERT_SRC} vert ${VERT_SPV})
 compile_glsl(${FRAG_SRC} frag ${FRAG_SPV})
-
 
 # Shader build target
 add_custom_target(Shaders ALL

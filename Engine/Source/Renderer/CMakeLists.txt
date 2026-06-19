@@ -6,6 +6,7 @@ target_sources(AcroyRenderer
         Private/Mesh.cpp
         Private/Material.cpp
         Private/SimpleMaterial.cpp
+        Private/ResourceManager.cpp
         
     PUBLIC
         Public/Renderer.hpp
@@ -15,6 +16,8 @@ target_sources(AcroyRenderer
         Public/Camera.hpp
         Public/PerspectiveCamera.hpp
         Public/Transform.hpp
+        Public/Light.hpp
+        Public/ResourceManager.hpp
 )
 
 target_include_directories(AcroyRenderer
@@ -23,6 +26,6 @@ target_include_directories(AcroyRenderer
 )
 
 target_link_libraries(AcroyRenderer
-    PUBLIC
-        AcroyRHI
+    PUBLIC AcroyRenderContext
+    PRIVATE stb_image tinyobjloader
 )

@@ -14,6 +14,7 @@ namespace Acroy
             case Format::DEPTH_COMPONENT24:  return GL_DEPTH_COMPONENT24;
             case Format::DEPTH24_STENCIL8:   return GL_DEPTH24_STENCIL8;
             case Format::DEPTH32F_STENCIL8:  return GL_DEPTH32F_STENCIL8;
+            case Format::RED:                return GL_RED;
         }
 
         return GL_RGBA8;
@@ -29,6 +30,7 @@ namespace Acroy
             case Format::DEPTH_COMPONENT24:  return GL_DEPTH_COMPONENT;
             case Format::DEPTH24_STENCIL8:   return GL_DEPTH_STENCIL;
             case Format::DEPTH32F_STENCIL8:  return GL_DEPTH_STENCIL;
+            case Format::RED:                return GL_RED;
         }
 
         return GL_RGBA;
@@ -44,12 +46,12 @@ namespace Acroy
         return GL_TEXTURE_2D;
     }
 
-    static GLint GetGLSamplerFilter(SamplerFilter filter)
+    static GLint GetGLSamplerFilter(SamplerFilter filter, bool isMinFilter)
     {
         switch (filter)
         {
-            case SamplerFilter::Linear:  return GL_LINEAR;
-            case SamplerFilter::Nearest: return GL_NEAREST;
+            case SamplerFilter::Linear:  return isMinFilter ? GL_LINEAR_MIPMAP_LINEAR : GL_LINEAR;
+            case SamplerFilter::Nearest: return isMinFilter ? GL_NEAREST_MIPMAP_NEAREST : GL_NEAREST;
         }
 
         return GL_NEAREST;
@@ -137,8 +139,8 @@ namespace Acroy
 
         // glSamplerParameteri(_handle, GL_TEXTURE_MIN_FILTER, GetGLSamplerFilter(_desc.minFilter) == GL_LINEAR ? GL_LINEAR_MIPMAP_LINEAR : GL_NEAREST_MIPMAP_NEAREST);
 
-        glSamplerParameteri(_handle, GL_TEXTURE_MIN_FILTER, GetGLSamplerFilter(_desc.minFilter));
-        glSamplerParameteri(_handle, GL_TEXTURE_MAG_FILTER, GetGLSamplerFilter(_desc.magFilter));
+        glSamplerParameteri(_handle, GL_TEXTURE_MIN_FILTER, GetGLSamplerFilter(_desc.minFilter, true));
+        glSamplerParameteri(_handle, GL_TEXTURE_MAG_FILTER, GetGLSamplerFilter(_desc.magFilter, false));
         glSamplerParameteri(_handle, GL_TEXTURE_WRAP_S, GetGLSamplerWrap(_desc.wrapS));
         glSamplerParameteri(_handle, GL_TEXTURE_WRAP_T, GetGLSamplerWrap(_desc.wrapT));
     }

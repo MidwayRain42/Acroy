@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Types.hpp"
+#include "Shader.hpp"
 
 #include <unordered_map>
 #include <string>
@@ -40,8 +41,7 @@ struct MaterialDesc {
     Shader* vs;
     Shader* fs;
 
-    MaterialParam* params;
-    u32            paramCount;
+    std::vector<MaterialParam> params;
 };
 
 struct ParamEntry {
@@ -52,20 +52,25 @@ struct ParamEntry {
 
 class Material {
 private:
-    Buffer* _parametersBuffer = nullptr;
-    Shader* _vs               = nullptr;
-    Shader* _fs               = nullptr;
-    u32     _textureCount     = 0;
+    Buffer* m_parametersBuffer = nullptr;
+    u32     m_textureCount     = 0;
+    MaterialDesc m_desc;
 
-    std::unordered_map<std::string, ParamEntry> _paramMap;
-    std::vector<Texture*> _textures;
-    std::vector<Sampler*> _samplers;
+    ShaderProgram* m_program   = nullptr;
+    
+    std::unordered_map<std::string, ParamEntry> m_paramMap;
+    std::vector<Texture*> m_textures;
+    std::vector<Sampler*> m_samplers;
 
+    void Init();
     void UploadParam(const char* name, const void* data, usize size);
 
 public:
+    Material() = default;
     Material(const MaterialDesc& desc);
     ~Material();
+
+    void SetDescription(const MaterialDesc& desc);
 
     void SetParamInt        (const char* name, s32 v);
     void SetParamFloat      (const char* name, f32 v);
@@ -77,12 +82,13 @@ public:
     void SetParamTexture(const char* name, Texture* texture);
     void SetParamSampler(const char* name, Sampler* sampler);
 
-    inline Shader*                      GetVS()          const { return _vs; }
-    inline Shader*                      GetFS()          const { return _fs; }
-    inline Buffer*                      GetParamBuffer() const { return _parametersBuffer; }
-    inline u32                          GetTexCount()    const { return _textureCount; }
-    inline const std::vector<Texture*>& GetTextures()    const { return _textures; }
-    inline const std::vector<Sampler*>& GetSamplers()    const { return _samplers; }
+    ShaderProgram*               GetProgram()     const { return m_program; }
+    Shader*                      GetVS()          const { return m_desc.vs; }
+    Shader*                      GetFS()          const { return m_desc.fs; }
+    Buffer*                      GetParamBuffer() const { return m_parametersBuffer; }
+    u32                          GetTexCount()    const { return m_textureCount; }
+    const std::vector<Texture*>& GetTextures()    const { return m_textures; }
+    const std::vector<Sampler*>& GetSamplers()    const { return m_samplers; }
 };
 
 } // namespace Acroy
