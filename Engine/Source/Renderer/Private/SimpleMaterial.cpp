@@ -37,8 +37,8 @@ namespace Acroy
 
     MaterialDesc SimpleMaterial::CreateDesc()
     {
-        m_vs = ResourceManager::LoadShader("Bin/Shaders/SimpleVert.spv", ShaderStage::Vertex);
-        m_fs = ResourceManager::LoadShader("Bin/Shaders/SimpleFrag.spv", ShaderStage::Fragment);
+        m_vs = ResourceManager::LoadShader("Bin/Shaders/Simple.vert.spv", ShaderStage::Vertex);
+        m_fs = ResourceManager::LoadShader("Bin/Shaders/Simple.frag.spv", ShaderStage::Fragment);
 
         MaterialDesc desc{};
         desc.vs = m_vs.get();

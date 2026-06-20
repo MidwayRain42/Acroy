@@ -8,6 +8,7 @@
 #include <SimpleMaterial.hpp>
 #include <Texture.hpp>
 #include <memory>
+#include <Skybox.hpp>
 
 class Game : public Acroy::Layer
 {
@@ -23,6 +24,8 @@ private:
 
     Acroy::PerspectiveCamera m_camera;
 
+    std::unique_ptr<Acroy::Skybox>         m_sky;
+    
     std::shared_ptr<Acroy::Mesh>           m_chair;
     std::shared_ptr<Acroy::Mesh>           m_ground;
     std::shared_ptr<Acroy::SimpleMaterial> m_chairMat;

@@ -8,7 +8,6 @@ target_link_libraries(Acroy PUBLIC AcroyCore AcroyRenderContext AcroyRenderer)
 
 find_program(GLSLANG glslangValidator REQUIRED)
 
-# Shader compile function
 function(compile_glsl SHADER STAGE OUT_FILE)
 
     add_custom_command(
@@ -28,21 +27,38 @@ function(compile_glsl SHADER STAGE OUT_FILE)
 
 endfunction()
 
+# Source shaders
+set(SHADER_FILES
+    Simple.vert vert
+    Simple.frag frag
+    Skybox.vert vert
+    Skybox.frag frag
+)
 
-set(VERT_SRC Shaders/SimpleVert.glsl)
-set(FRAG_SRC Shaders/SimpleFrag.glsl)
+set(SPV_OUTPUTS)
 
-set(VERT_SPV ${CMAKE_BINARY_DIR}/Shaders/SimpleVert.spv)
-set(FRAG_SPV ${CMAKE_BINARY_DIR}/Shaders/SimpleFrag.spv)
+list(LENGTH SHADER_FILES SHADER_COUNT)
+math(EXPR SHADER_COUNT "${SHADER_COUNT} - 1")
 
-compile_glsl(${VERT_SRC} vert ${VERT_SPV})
-compile_glsl(${FRAG_SRC} frag ${FRAG_SPV})
+foreach(i RANGE 0 ${SHADER_COUNT} 2)
+    list(GET SHADER_FILES ${i} SHADER)
+    math(EXPR j "${i} + 1")
+    list(GET SHADER_FILES ${j} STAGE)
 
-# Shader build target
+    get_filename_component(NAME ${SHADER} NAME)
+    set(OUT_FILE ${CMAKE_BINARY_DIR}/Shaders/${NAME}.spv)
+
+    compile_glsl(
+        Shaders/${SHADER}
+        ${STAGE}
+        ${OUT_FILE}
+    )
+
+    list(APPEND SPV_OUTPUTS ${OUT_FILE})
+endforeach()
+
 add_custom_target(Shaders ALL
-    DEPENDS
-        ${VERT_SPV}
-        ${FRAG_SPV}
+    DEPENDS ${SPV_OUTPUTS}
 )
 
 add_dependencies(Acroy Shaders)

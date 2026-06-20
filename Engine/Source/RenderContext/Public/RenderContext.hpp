@@ -15,6 +15,33 @@ namespace Acroy
 
     enum class IndexType { UInt32, UInt8 };
     enum class PrimitiveType { TriangleList, LineList, LineStrip, PointList, TriangleStrip };
+    enum class DepthFunc { Less, Lequal, Greater, Always };
+    enum class BlendFactor { Zero, One, SrcAlpha, OneMinusSrcAlpha, DstAlpha, OneMinusDstAlpha };
+    enum class CullMode { None, Front, Back };
+    enum class FrontFace { CW, CCW };
+
+    struct RenderState
+    {
+        // Depth
+        bool depthTest = true;
+        bool depthWrite = true;
+        DepthFunc depthFunc = DepthFunc::Less;
+
+        // Blending
+        bool blendEnabled = false;
+        BlendFactor srcBlend = BlendFactor::One;
+        BlendFactor dstBlend = BlendFactor::Zero;
+
+        // Culling
+        CullMode cullMode = CullMode::Back;
+        FrontFace frontFace = FrontFace::CCW;
+
+        // Output control
+        bool colorWrite = true;
+
+        // Debug
+        bool wireframe = false;
+    };
 
     class RenderContext
     {
@@ -26,6 +53,7 @@ namespace Acroy
 
         static void Clear(const glm::vec4& color, f32 depth = 1.0f);
 
+        static void ApplyRenderState(const RenderState& state);
         static void BindVertexArray(VertexArray* vertexArray);
 
         static void BindShaderProgram(ShaderProgram* program);

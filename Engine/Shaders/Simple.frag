@@ -5,7 +5,7 @@ layout(location = 1) in vec2 vTexCoord;
 
 layout(location = 0) out vec4 fragColor;
 
-layout(std140, binding = 1) uniform Params
+layout(std140, binding = 2) uniform Params
 {
     vec4 color;
     bool useTexture;

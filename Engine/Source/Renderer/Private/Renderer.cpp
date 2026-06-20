@@ -9,10 +9,10 @@
 #include "Material.hpp"
 #include "Events.hpp"
 #include "Camera.hpp"
+#include "Skybox.hpp"
 
 #include <cassert>
 #include <iostream>
-#include <unordered_map>
 
 namespace Acroy
 {
@@ -28,23 +28,36 @@ namespace Acroy
         RenderContext::Init(desc.window);
         desc.window->SetVSync(desc.enableVSync);
 
+        BufferDesc frameUBODesc {    
+            .size = sizeof(PerFrameData),
+            .type = BufferType::Uniform,
+            .usage = BufferUsage::Dynamic,
+            .cpuWritable = true,
+            .persistentMap = true
+        };
+            
+        m_frameUniformBuffer = new Buffer(frameUBODesc);
+
         const u64 uboAlignment = RenderContext::GetUniformBufferOffsetAlignment();
-        m_perFrameDataStride = AlignUp(sizeof(PerFrameData), uboAlignment);
-        const u64 perFrameBufferSize = m_perFrameDataStride * 128;
+        m_objectStride = AlignUp(sizeof(PerObjectData), uboAlignment);
+        const u64 objectBufferSize = m_objectStride * 128;
 
-        BufferDesc perFrameUBODesc{};
-        perFrameUBODesc.cpuWritable = true;
-        perFrameUBODesc.persistentMap = true;
-        perFrameUBODesc.type = BufferType::Uniform;
-        perFrameUBODesc.usage = BufferUsage::Dynamic;
-        perFrameUBODesc.size = static_cast<u32>(perFrameBufferSize);
+        BufferDesc objectUBODesc {
+            .size = static_cast<u32>(objectBufferSize),
+            .type = BufferType::Uniform,
+            .usage = BufferUsage::Dynamic,
+            .cpuWritable = true,
+            .persistentMap = true
+        };
 
-        m_perFrameUniform = new Buffer(perFrameUBODesc);
-        m_perFrameDataOffset = 0;
+        m_objectUniformBuffer = new Buffer(objectUBODesc);
     }
 
     void Renderer::BeginFrame()
     {
+        m_renderState.depthWrite = true;
+        m_renderState.depthFunc  = DepthFunc::Less;
+        RenderContext::ApplyRenderState(m_renderState);
         RenderContext::Clear({});
 
         if (m_cam)
@@ -54,7 +67,10 @@ namespace Acroy
         }
         
         m_perFrameData.time = m_window->GetTime();
-        m_perFrameDataOffset = 0;
+        
+        m_frameUniformBuffer->UploadData(&m_perFrameData, sizeof(PerFrameData));
+        RenderContext::BindUniformBuffer(0, m_frameUniformBuffer);
+        m_objectOffset = 0;
     }
 
     void Renderer::EndFrame()
@@ -71,11 +87,13 @@ namespace Acroy
     {
         RenderContext::BindShaderProgram(mat.GetProgram());
 
-        m_perFrameData.model = transform.GetMatrix();
+        m_perObjectData.model = transform.GetMatrix();
 
-        m_perFrameUniform->UploadData(&m_perFrameData, sizeof(PerFrameData), m_perFrameDataOffset);
-        RenderContext::BindUniformBuffer(0, m_perFrameUniform, m_perFrameDataOffset, m_perFrameDataStride);
-        RenderContext::BindUniformBuffer(1, mat.GetParamBuffer());
+        m_objectUniformBuffer->UploadData(&m_perObjectData, sizeof(PerObjectData), m_objectOffset);
+
+        RenderContext::BindUniformBuffer(1, m_objectUniformBuffer, m_objectOffset, m_objectStride);
+
+        RenderContext::BindUniformBuffer(2, mat.GetParamBuffer());
 
         const auto& textures = mat.GetTextures();
         const auto& samplers = mat.GetSamplers();
@@ -90,13 +108,28 @@ namespace Acroy
         }
 
         DrawMesh(mesh);
-        m_perFrameDataOffset += m_perFrameDataStride;
+        m_objectOffset += m_objectStride;
+    }
+
+    void Renderer::DrawSkybox(const Skybox& sky)
+    {
+        RenderContext::BindShaderProgram(sky.GetProgram());
+        RenderContext::BindVertexArray(sky.GetVAO());
+        RenderContext::BindTexture(0, sky.GetTexture());
+        RenderContext::BindSampler(0, sky.GetSampler());
+
+
+        m_renderState.depthWrite = false;
+        m_renderState.depthFunc  = DepthFunc::Lequal;
+        RenderContext::ApplyRenderState(m_renderState);
+        RenderContext::Draw(36);
     }
 
     void Renderer::SetCamera(Camera& cam)
     {
         m_cam = &cam;
     }
+
 
     void Renderer::OnWindowResize(WindowResizeEvent& event)
     {
@@ -106,6 +139,7 @@ namespace Acroy
 
     Renderer::~Renderer()
     {
-        delete m_perFrameUniform;
+        delete m_frameUniformBuffer;
+        delete m_objectUniformBuffer;
     }
 }

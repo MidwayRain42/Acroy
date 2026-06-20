@@ -43,7 +43,7 @@ namespace Acroy
         usize size = x * y * channels * sizeof(u8);
 
         std::shared_ptr<Texture> tex = std::make_shared<Texture>(desc);
-        tex->UploadData(bytes, size);
+        tex->UploadData(bytes);
 
         stbi_image_free(bytes);
 

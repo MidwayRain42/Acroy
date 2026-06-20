@@ -12,18 +12,64 @@
 
 namespace Acroy
 {
-    static const GLenum GetGLPrimitiveType(PrimitiveType type)
+    static const GLenum ToGL(PrimitiveType type)
     {
         switch (type)
         {
-            case PrimitiveType::PointList:     return GL_POINTS;
+            case PrimitiveType::TriangleList:  return GL_TRIANGLES;
             case PrimitiveType::LineList:      return GL_LINES;
             case PrimitiveType::LineStrip:     return GL_LINE_STRIP;
-            case PrimitiveType::TriangleList:  return GL_TRIANGLES;
+            case PrimitiveType::PointList:     return GL_POINTS;
             case PrimitiveType::TriangleStrip: return GL_TRIANGLE_STRIP;
-
-            default: return GL_TRIANGLES;
         }
+        return GL_TRIANGLES;
+    }
+
+    static const GLenum ToGL(IndexType type)
+    {
+        switch (type)
+        {
+            case IndexType::UInt8:  return GL_UNSIGNED_BYTE;
+            case IndexType::UInt32: return GL_UNSIGNED_INT;
+        }
+        return GL_UNSIGNED_INT;
+    }
+
+    static const GLenum ToGL(DepthFunc func)
+    {
+        switch (func)
+        {
+            case DepthFunc::Less:    return GL_LESS;
+            case DepthFunc::Lequal:  return GL_LEQUAL;
+            case DepthFunc::Greater: return GL_GREATER;
+            case DepthFunc::Always:  return GL_ALWAYS;
+        }
+        return GL_LESS;
+    }
+
+    static const GLenum ToGL(BlendFactor factor)
+    {
+        switch (factor)
+        {
+            case BlendFactor::Zero:              return GL_ZERO;
+            case BlendFactor::One:               return GL_ONE;
+            case BlendFactor::SrcAlpha:          return GL_SRC_ALPHA;
+            case BlendFactor::OneMinusSrcAlpha:  return GL_ONE_MINUS_SRC_ALPHA;
+            case BlendFactor::DstAlpha:          return GL_DST_ALPHA;
+            case BlendFactor::OneMinusDstAlpha:  return GL_ONE_MINUS_DST_ALPHA;
+        }
+        return GL_ONE;
+    }
+
+    static const GLenum ToGL(CullMode mode)
+    {
+        switch (mode)
+        {
+            case CullMode::Front: return GL_FRONT;
+            case CullMode::Back:  return GL_BACK;
+            case CullMode::None:  return GL_BACK;
+        }
+        return GL_BACK;
     }
 
     bool RenderContext::Init(Window* window)
@@ -32,8 +78,8 @@ namespace Acroy
         if (!ok)
             return false;
 
-        glEnable(GL_DEPTH_TEST);
-        glDepthFunc(GL_LESS);
+        // glEnable(GL_DEPTH_TEST);
+        // glDepthFunc(GL_LESS);
 
         const auto size = window->GetSize();
         
@@ -44,6 +90,45 @@ namespace Acroy
         glViewport(0, 0, size.x, size.y);
 
         return true;
+    }
+
+    void RenderContext::ApplyRenderState(const RenderState& state)
+    {
+        // Depth test
+        if (state.depthTest)
+            glEnable(GL_DEPTH_TEST);
+        else
+            glDisable(GL_DEPTH_TEST);
+
+        glDepthFunc(ToGL(state.depthFunc));
+        glDepthMask(state.depthWrite ? GL_TRUE : GL_FALSE);
+
+        // Blending
+        if (state.blendEnabled)
+            glEnable(GL_BLEND);
+        else
+            glDisable(GL_BLEND);
+
+        glBlendFunc(ToGL(state.srcBlend), ToGL(state.dstBlend));
+
+        // Culling
+        if (state.cullMode == CullMode::None)
+        {
+            glDisable(GL_CULL_FACE);
+        }
+        else
+        {
+            glEnable(GL_CULL_FACE);
+            glCullFace(ToGL(state.cullMode));
+        }
+
+        glFrontFace(state.frontFace == FrontFace::CCW ? GL_CCW : GL_CW);
+
+        // Color write
+        glColorMask(state.colorWrite, state.colorWrite, state.colorWrite, state.colorWrite);
+
+        // Wireframe
+        glPolygonMode(GL_FRONT_AND_BACK, state.wireframe ? GL_LINE : GL_FILL);
     }
 
     void RenderContext::Clear(const glm::vec4& color, f32 depth)
@@ -70,7 +155,7 @@ namespace Acroy
 
     void RenderContext::Draw(u32 vertexCount, PrimitiveType primitiveType, u32 firstVertex)
     {
-        glDrawArrays(GetGLPrimitiveType(primitiveType), firstVertex, vertexCount);
+        glDrawArrays(ToGL(primitiveType), firstVertex, vertexCount);
     }
 
     u64 RenderContext::GetUniformBufferOffsetAlignment()
@@ -100,6 +185,6 @@ namespace Acroy
 
     void RenderContext::DrawIndexed(u32 indexCount, PrimitiveType primitiveType)
     {
-        glDrawElements(GetGLPrimitiveType(primitiveType), indexCount, GL_UNSIGNED_INT, nullptr);
+        glDrawElements(ToGL(primitiveType), indexCount, GL_UNSIGNED_INT, nullptr);
     }
 }

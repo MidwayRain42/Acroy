@@ -41,6 +41,7 @@ namespace Acroy
         switch (type)
         {
             case TextureType::Texture2D: return GL_TEXTURE_2D;
+            case TextureType::CubeMap:   return GL_TEXTURE_CUBE_MAP;
         }
 
         return GL_TEXTURE_2D;
@@ -89,9 +90,11 @@ namespace Acroy
 
         switch (_desc.type)
         {
+            case TextureType::CubeMap:
             case TextureType::Texture2D:
                 glTextureStorage2D(_handle, _desc.mipLevels, GetGLFormat(_desc.format), _desc.width, _desc.height);
                 break;
+
             default:
                 std::cout << "Unsupported texture type!" << std::endl;
                 break;
@@ -103,7 +106,7 @@ namespace Acroy
         glBindTextureUnit(slot, _handle);
     }
 
-    void Texture::UploadData(const void* data, u32 size, s32 xOffset, s32 yOffset)
+    void Texture::UploadData(const void* data, s32 xOffset, s32 yOffset, s32 zOffset)
     {
         switch (_desc.type)
         {
@@ -120,6 +123,19 @@ namespace Acroy
                     data
                 );
 
+                break;
+            }
+            case TextureType::CubeMap:
+            {
+                glTextureSubImage3D(
+                    _handle,
+                    0,
+                    xOffset, yOffset, zOffset,
+                    _desc.width, _desc.height, 1,
+                    GetGLPixelFormat(_desc.format),
+                    GL_UNSIGNED_BYTE,
+                    data
+                );
                 break;
             }
         }
@@ -143,6 +159,7 @@ namespace Acroy
         glSamplerParameteri(_handle, GL_TEXTURE_MAG_FILTER, GetGLSamplerFilter(_desc.magFilter, false));
         glSamplerParameteri(_handle, GL_TEXTURE_WRAP_S, GetGLSamplerWrap(_desc.wrapS));
         glSamplerParameteri(_handle, GL_TEXTURE_WRAP_T, GetGLSamplerWrap(_desc.wrapT));
+        glSamplerParameteri(_handle, GL_TEXTURE_WRAP_R, GetGLSamplerWrap(_desc.wrapR));
     }
 
     Sampler::~Sampler()

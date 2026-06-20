@@ -7,6 +7,7 @@ target_sources(AcroyRenderer
         Private/Material.cpp
         Private/SimpleMaterial.cpp
         Private/ResourceManager.cpp
+        Private/Skybox.cpp
         
     PUBLIC
         Public/Renderer.hpp
@@ -18,6 +19,7 @@ target_sources(AcroyRenderer
         Public/Transform.hpp
         Public/Light.hpp
         Public/ResourceManager.hpp
+        Public/Skybox.hpp
 )
 
 target_include_directories(AcroyRenderer

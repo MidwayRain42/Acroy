@@ -14,9 +14,9 @@ namespace Acroy
     Engine::Engine() : _running(true)
     {
         _window = std::make_unique<Window>(Acroy::WindowProps {
-            .width      = 1920,
-            .height     = 1080,
-            .fullscreen = true,
+            .width      = 1600,
+            .height     = 900,
+            .fullscreen = false,
             .title      = "Acroy Engine"
         });
 
@@ -64,8 +64,6 @@ namespace Acroy
 
             default: break;
         }
-
-        if (event.GetEventType() == EventType::WindowClose) _running = false;
 
         for (auto& layer : std::views::reverse(_layers)) {
 			layer->OnEvent(event);
